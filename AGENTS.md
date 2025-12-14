@@ -203,24 +203,26 @@ w3.middleware_onion.inject(geth_poa_middleware, layer=0)
 - Always verify testnet flag before trading
 
 ### Position Data Format
-Standardized format across all protocols:
+Standardized format using the Position dataclass:
 ```python
-{
-    'id': 'protocol-tokenId',
-    'protocol': 'uniswap|aerodrome|vfat',
-    'token0': 'WETH',
-    'token1': 'USDC',
-    'token0_address': '0x...',
-    'token1_address': '0x...',
-    'liquidity': Decimal('1000000'),
-    'tick_lower': -887220,
-    'tick_upper': 887220,
-    'fee_tier': 3000,  # 0.3%
-    'token0_amount': Decimal('1.5'),
-    'token1_amount': Decimal('3000'),
-    'uncollected_fees_token0': Decimal('0.001'),
-    'uncollected_fees_token1': Decimal('2.5'),
-}
+Position(
+    position_id='uniswap-12345',
+    protocol='uniswap',  # or 'aerodrome'
+    token0='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',  # WETH
+    token1='0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',  # USDC
+    token0_symbol='WETH',
+    token1_symbol='USDC',
+    liquidity=Decimal('1000000'),
+    tick_lower=-887220,
+    tick_upper=887220,
+    current_tick=0,
+    token0_amount=Decimal('1.5'),
+    token1_amount=Decimal('3000'),
+    unclaimed_fees0=Decimal('0.001'),
+    unclaimed_fees1=Decimal('2.5'),
+    price=Decimal('2000'),
+    total_value_usd=Decimal('6000'),
+)
 ```
 
 ## Security Checklist

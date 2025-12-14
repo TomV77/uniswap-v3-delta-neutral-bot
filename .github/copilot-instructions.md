@@ -15,6 +15,9 @@ This is a Python-based delta-neutral hedging bot for Uniswap V3 and Aerodrome li
 ### Python Style
 - Follow PEP 8 guidelines
 - Use type hints for function parameters and return values
+  - Import types from typing module: `from typing import List, Dict, Optional, Any, Tuple`
+  - Use `Decimal` from decimal module for financial calculations
+  - Example: `def calculate_delta(position: Dict[str, Any], price: Decimal) -> Decimal:`
 - Use async/await for I/O operations (Web3, API calls)
 - Keep functions focused and single-purpose
 - Add docstrings to all classes and public methods
