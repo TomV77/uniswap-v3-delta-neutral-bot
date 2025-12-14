@@ -159,9 +159,10 @@ The bot reads all configuration from environment variables in your `.env` file:
 python -m bot.main
 ```
 
-**Note:** The optional config file parameter is deprecated. All configuration should be in `.env`:
+**Note:** You can optionally specify a config file path, but environment variables always take precedence:
 ```bash
-# This still works but is not recommended - use .env instead
+# All configuration should be in .env for security
+# The config.json is now documentation-only by default
 python -m bot.main /path/to/config.json
 ```
 
