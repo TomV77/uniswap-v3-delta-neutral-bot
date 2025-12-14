@@ -51,7 +51,7 @@ This bot monitors liquidity positions across Uniswap V3 and Aerodrome (via vfat.
 - Hyperliquid account and API credentials
 - Wallet with LP positions in Uniswap V3 or Aerodrome
 
-### Setup
+### Quick Setup
 
 1. Clone the repository:
 ```bash
@@ -64,51 +64,79 @@ cd uniswap-v3-delta-neutral-bot
 pip install -r requirements.txt
 ```
 
-3. Configure the bot:
+3. Configure environment:
+```bash
+# Copy the environment template
+cp .env.example .env
+
+# Edit .env with your credentials (see Configuration section below)
+nano .env  # or use your preferred editor
+```
+
+4. (Optional) Create local config file:
 ```bash
 cp config.json config.json.local
-# Edit config.json.local with your settings
+# Edit config.json.local with additional settings
 ```
+
+### AWS Deployment
+
+For detailed instructions on deploying to AWS t3.small instance, see [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md).
+
+**Quick AWS Setup:**
+```bash
+# On AWS t3.small Ubuntu instance
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y python3.11 python3.11-venv git
+git clone https://github.com/TomV77/uniswap-v3-delta-neutral-bot.git
+cd uniswap-v3-delta-neutral-bot
+python3.11 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+# Edit .env with your settings
+```
+
+See [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md) for systemd service setup, monitoring, and production best practices.
 
 ## Configuration
 
-Edit `config.json` with your settings:
+The bot supports two configuration methods:
 
-### Essential Settings
+### 1. Environment Variables (Recommended for Production)
 
-```json
-{
-  "wallet_address": "0xYourWalletAddress",
-  "rpc_url": "https://mainnet.infura.io/v3/YOUR_KEY",
-  "hyperliquid_api_key": "your_api_key",
-  "hyperliquid_api_secret": "your_api_secret",
-  "hyperliquid_testnet": true
-}
+Create a `.env` file from the template:
+
+```bash
+cp .env.example .env
 ```
 
-### Contract Addresses
+Then edit `.env` with your credentials:
 
-```json
-{
-  "uniswap_v3_nft_address": "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
-  "aerodrome_nft_address": "0xAerodromeNFTPositionManager",
-  "sickle_contract_address": "0xSickleContractAddress"
-}
+```bash
+# Main wallet address (Tangem or any EVM wallet with LP positions)
+WALLET_ADDRESS=0xYourTangemWalletAddress
+
+# Hyperliquid API wallet private key
+HYPERLIQUID_PRIVATE_KEY=0xYourHyperliquidPrivateKey
+
+# RPC endpoint (for Base chain if using Aerodrome)
+RPC_URL=https://base-mainnet.infura.io/v3/YOUR_INFURA_KEY
+
+# VFAT Sickle contract on Base chain
+VFAT_SICKLE_ADDRESS=0xYourSickleContractAddress
+
+# Risk thresholds
+DELTA_THRESHOLD=0.1
+REBALANCE_THRESHOLD=0.05
+MAX_POSITION_SIZE=10.0
 ```
 
-### Risk Parameters
+See [.env.example](.env.example) for complete list of configuration options with detailed descriptions.
 
-```json
-{
-  "delta_threshold": 0.1,           // Maximum delta before rebalancing
-  "rebalance_threshold": 0.05,      // Delta change triggering rebalance
-  "max_impermanent_loss": 0.05,     // 5% maximum IL tolerance
-  "min_fee_coverage": 1.5,          // Fees should cover IL by 1.5x
-  "slippage_tolerance": 0.005       // 0.5% slippage tolerance
-}
-```
+### 2. JSON Configuration File (Alternative)
 
-### Trading Limits
+Alternatively, edit `config.json` with your settings:
 
 ```json
 {

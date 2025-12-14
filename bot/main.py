@@ -9,14 +9,20 @@ import asyncio
 import logging
 import json
 import sys
+import os
 from pathlib import Path
 from typing import Dict, Any, List
 from decimal import Decimal
+from dotenv import load_dotenv
 import signal
 
 from bot.position_reader import PositionReader, Position
 from bot.hedging_executor import HedgingExecutor, OrderSide
 from bot.risk_management import RiskManagement, RiskMetrics
+from bot.config import load_config, get_default_config
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -38,9 +44,15 @@ class DeltaNeutralBot:
         Initialize the bot.
         
         Args:
-            config_path: Path to configuration file
+            config_path: Path to configuration file (optional, env vars take precedence)
         """
-        self.config = self._load_config(config_path)
+        # Load configuration from file and environment variables
+        self.config = load_config(config_path)
+        
+        # Fall back to defaults if no config loaded
+        if not self.config:
+            logger.warning("No configuration loaded, using defaults")
+            self.config = get_default_config()
         
         # Initialize components
         self.position_reader = PositionReader(self.config)
@@ -60,37 +72,7 @@ class DeltaNeutralBot:
         
         logger.info("DeltaNeutralBot initialized")
     
-    def _load_config(self, config_path: str) -> Dict[str, Any]:
-        """Load configuration from JSON file"""
-        try:
-            config_file = Path(config_path)
-            if config_file.exists():
-                with open(config_file, 'r') as f:
-                    config = json.load(f)
-                logger.info(f"Configuration loaded from {config_path}")
-                return config
-            else:
-                logger.warning(f"Config file {config_path} not found, using defaults")
-                return self._get_default_config()
-        except Exception as e:
-            logger.error(f"Error loading config: {e}")
-            return self._get_default_config()
-    
-    def _get_default_config(self) -> Dict[str, Any]:
-        """Get default configuration"""
-        return {
-            "wallet_address": "",
-            "rpc_url": "",
-            "update_interval_seconds": 60,
-            "hedge_symbol": "ETH-USD",
-            "delta_threshold": 0.1,
-            "rebalance_threshold": 0.05,
-            "max_position_size": 10.0,
-            "min_order_size": 0.01,
-            "slippage_tolerance": 0.005,
-            "max_daily_trades": 100,
-            "hyperliquid_testnet": True
-        }
+
     
     async def start(self):
         """Start the bot main loop"""

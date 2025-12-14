@@ -36,11 +36,22 @@ env/
 # Logs
 *.log
 bot.log
+bot-error.log
+health-check.log
+
+# Environment files (NEVER commit!)
+.env
+.env.local
+.env.*.local
 
 # Configuration (keep template)
 config.json.local
 config.*.json
 !config.json
+
+# Backups
+backups/
+*.backup
 
 # OS
 .DS_Store
@@ -56,3 +67,4 @@ htmlcov/
 *.tmp
 .temp/
 tmp/
+

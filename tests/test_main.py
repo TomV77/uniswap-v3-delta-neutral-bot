@@ -62,7 +62,8 @@ class TestDeltaNeutralBot(unittest.TestCase):
     
     def test_get_default_config(self):
         """Test default configuration"""
-        config = self.bot._get_default_config()
+        from bot.config import get_default_config
+        config = get_default_config()
         
         self.assertIn('wallet_address', config)
         self.assertIn('delta_threshold', config)
