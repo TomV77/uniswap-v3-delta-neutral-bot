@@ -493,8 +493,8 @@ class TestRiskManagementEdgeCases(unittest.TestCase):
             target_delta=Decimal('0')
         )
         
-        # Net delta = 1.0 + (-2.0) = -1.0
-        # Need to reduce hedge (positive adjustment to close shorts)
+        # Net delta = 1.0 + (-2.0) = -1.0 (we're over-hedged, too short)
+        # Adjustment = net_delta - target = -1.0 - 0 = -1.0 (negative = reduce short)
         self.assertEqual(adjustment, Decimal('-1.0'))
     
     def test_calculate_position_delta_very_small_price(self):
@@ -506,7 +506,8 @@ class TestRiskManagementEdgeCases(unittest.TestCase):
         )
         
         # token1_in_token0 = 1000 / 0.001 = 1,000,000
-        # delta = 1.0 - 1,000,000 = -999,999
+        # delta = 1.0 - 1,000,000 = -999,999 (heavily short)
+        # Test just verifies it's negative and within reasonable bounds
         self.assertLess(delta, Decimal('0'))
         self.assertGreater(delta, Decimal('-1000000'))
     
