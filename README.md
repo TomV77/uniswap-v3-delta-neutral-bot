@@ -159,12 +159,7 @@ The bot reads all configuration from environment variables in your `.env` file:
 python -m bot.main
 ```
 
-**Note:** You can optionally specify a config file path, but environment variables always take precedence:
-```bash
-# All configuration should be in .env for security
-# The config.json is now documentation-only by default
-python -m bot.main /path/to/config.json
-```
+**Note:** The config.json file is now documentation-only. All configuration values should be set in your `.env` file for security. The bot will use default values from `bot/config.get_default_config()` for any parameters not specified in `.env`.
 
 ### Bot Workflow
 
