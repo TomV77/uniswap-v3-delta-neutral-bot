@@ -9,6 +9,7 @@ import asyncio
 import json
 import tempfile
 import os
+import pytest
 
 from bot.main import DeltaNeutralBot
 from bot.position_reader import Position
@@ -70,6 +71,7 @@ class TestDeltaNeutralBot(unittest.TestCase):
         self.assertIn('hedge_symbol', config)
         self.assertIn('update_interval_seconds', config)
     
+    @pytest.mark.asyncio
     @patch.object(DeltaNeutralBot, '_fetch_positions')
     async def test_run_cycle_no_positions(self, mock_fetch):
         """Test bot cycle with no positions"""
@@ -80,6 +82,7 @@ class TestDeltaNeutralBot(unittest.TestCase):
         
         self.assertTrue(mock_fetch.called)
     
+    @pytest.mark.asyncio
     @patch.object(DeltaNeutralBot, '_fetch_positions')
     @patch.object(DeltaNeutralBot, '_analyze_positions')
     @patch('bot.main.HedgingExecutor.get_current_position')
@@ -127,6 +130,7 @@ class TestDeltaNeutralBot(unittest.TestCase):
         self.assertTrue(mock_fetch.called)
         self.assertTrue(mock_analyze.called)
     
+    @pytest.mark.asyncio
     @patch('bot.main.PositionReader.fetch_positions')
     async def test_fetch_positions(self, mock_fetch):
         """Test fetching positions"""
@@ -137,6 +141,7 @@ class TestDeltaNeutralBot(unittest.TestCase):
         self.assertIsInstance(positions, list)
         self.assertTrue(mock_fetch.called)
     
+    @pytest.mark.asyncio
     @patch('bot.main.RiskManagement.assess_position_risk')
     async def test_analyze_positions(self, mock_assess):
         """Test analyzing positions"""
@@ -179,6 +184,7 @@ class TestDeltaNeutralBot(unittest.TestCase):
         self.assertEqual(total_delta, Decimal('0.5'))
         self.assertEqual(len(metrics_list), 1)
     
+    @pytest.mark.asyncio
     @patch('bot.main.HedgingExecutor.increase_hedge')
     @patch('bot.main.RiskManagement.calculate_optimal_hedge_size')
     async def test_execute_hedge_increase(self, mock_calc, mock_increase):
@@ -197,6 +203,7 @@ class TestDeltaNeutralBot(unittest.TestCase):
         self.assertTrue(mock_increase.called)
         self.assertEqual(self.bot.total_hedges_executed, 1)
     
+    @pytest.mark.asyncio
     @patch('bot.main.HedgingExecutor.decrease_hedge')
     @patch('bot.main.RiskManagement.calculate_optimal_hedge_size')
     async def test_execute_hedge_decrease(self, mock_calc, mock_decrease):
@@ -214,6 +221,7 @@ class TestDeltaNeutralBot(unittest.TestCase):
         
         self.assertTrue(mock_decrease.called)
     
+    @pytest.mark.asyncio
     @patch('bot.main.RiskManagement.calculate_optimal_hedge_size')
     async def test_execute_hedge_too_small(self, mock_calc):
         """Test executing hedge when adjustment is too small"""
@@ -265,6 +273,7 @@ class TestDeltaNeutralBot(unittest.TestCase):
         # Should not raise any exceptions
         self.bot._log_performance_report(metrics_list)
     
+    @pytest.mark.asyncio
     @patch('bot.main.HedgingExecutor.close_all_positions')
     async def test_stop_with_close_positions(self, mock_close):
         """Test stopping bot with position closing"""
@@ -276,6 +285,7 @@ class TestDeltaNeutralBot(unittest.TestCase):
         self.assertFalse(self.bot.running)
         self.assertTrue(mock_close.called)
     
+    @pytest.mark.asyncio
     async def test_stop_without_close_positions(self):
         """Test stopping bot without position closing"""
         self.bot.config['close_positions_on_shutdown'] = False
