@@ -18,14 +18,33 @@ This guide provides step-by-step instructions for deploying the Delta-Neutral He
 # Update system packages
 sudo apt update && sudo apt upgrade -y
 
-# Install Python 3.11 and required tools
-sudo apt install -y python3.11 python3.11-venv python3-pip git curl
+# Install Python 3.10 (default on Ubuntu 22.04) and required tools
+sudo apt install -y python3 python3-venv python3-pip git curl
 
 # Install system dependencies
 sudo apt install -y build-essential libssl-dev libffi-dev python3-dev
 
-# Verify Python version
+# Verify Python version (should be 3.10.x)
+python3 --version
+```
+
+**Optional - Install Python 3.11 or newer versions:**
+
+If you specifically want Python 3.11 or newer (not required, but optional), you can install it from the deadsnakes PPA:
+
+```bash
+# Add deadsnakes PPA for newer Python versions
+sudo add-apt-repository ppa:deadsnakes/ppa -y
+sudo apt update
+
+# Install Python 3.11
+sudo apt install -y python3.11 python3.11-venv python3.11-dev
+
+# Verify installation
 python3.11 --version
+
+# Use python3.11 instead of python3 when creating the virtual environment:
+# python3.11 -m venv venv
 ```
 
 ### 2. Clone Repository
@@ -37,7 +56,7 @@ git clone https://github.com/TomV77/uniswap-v3-delta-neutral-bot.git
 cd uniswap-v3-delta-neutral-bot
 
 # Create virtual environment
-python3.11 -m venv venv
+python3 -m venv venv
 
 # Activate virtual environment
 source venv/bin/activate

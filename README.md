@@ -87,10 +87,10 @@ For detailed instructions on deploying to AWS t3.small instance, see [AWS_DEPLOY
 ```bash
 # On AWS t3.small Ubuntu instance
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y python3.11 python3.11-venv git
+sudo apt install -y python3 python3-venv git
 git clone https://github.com/TomV77/uniswap-v3-delta-neutral-bot.git
 cd uniswap-v3-delta-neutral-bot
-python3.11 -m venv venv
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
