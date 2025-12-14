@@ -101,9 +101,11 @@ See [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md) for systemd service setup, monitoring
 
 ## Configuration
 
-The bot supports two configuration methods:
+The bot uses environment variables for all configuration. This ensures better security by keeping sensitive data (private keys, API credentials, wallet addresses) separate from code.
 
-### 1. Environment Variables (Recommended for Production)
+### Environment Variables (Required)
+
+**All configuration must be provided via environment variables in a `.env` file.**
 
 Create a `.env` file from the template:
 
@@ -117,7 +119,7 @@ Then edit `.env` with your credentials:
 # Main wallet address (Tangem or any EVM wallet with LP positions)
 WALLET_ADDRESS=0xYourTangemWalletAddress
 
-# Hyperliquid API wallet private key
+# Hyperliquid API wallet private key (SENSITIVE - never commit this!)
 HYPERLIQUID_PRIVATE_KEY=0xYourHyperliquidPrivateKey
 
 # RPC endpoint (for Base chain if using Aerodrome)
@@ -126,40 +128,40 @@ RPC_URL=https://base-mainnet.infura.io/v3/YOUR_INFURA_KEY
 # VFAT Sickle contract on Base chain
 VFAT_SICKLE_ADDRESS=0xYourSickleContractAddress
 
-# Risk thresholds
+# Risk thresholds and bot parameters
 DELTA_THRESHOLD=0.1
 REBALANCE_THRESHOLD=0.05
 MAX_POSITION_SIZE=10.0
+UPDATE_INTERVAL_SECONDS=60
 ```
 
-See [.env.example](.env.example) for complete list of configuration options with detailed descriptions.
+See [.env.example](.env.example) for the complete list of all configuration options with detailed descriptions.
 
-### 2. JSON Configuration File (Alternative)
+### Configuration Schema Documentation
 
-Alternatively, edit `config.json` with your settings:
+The `config.json` file serves as **documentation only** and describes all available configuration parameters. It does **not** contain any actual configuration values.
 
-```json
-{
-  "max_position_size": 10.0,        // Maximum single position size
-  "min_order_size": 0.01,           // Minimum order size
-  "max_daily_trades": 100,          // Daily trade limit
-  "update_interval_seconds": 60     // Update frequency
-}
-```
+**Important Security Notes:**
+- Never commit sensitive data to `config.json`
+- All configuration values should be set in `.env` (which is gitignored)
+- Environment variables always take precedence over any values in `config.json`
+- The `.env` file should never be committed to version control
 
-See `config.json` for complete configuration options with detailed descriptions.
+See `config.json` for the complete schema and description of all configuration parameters.
 
 ## Usage
 
 ### Running the Bot
 
-Basic usage:
+The bot reads all configuration from environment variables in your `.env` file:
+
 ```bash
 python -m bot.main
 ```
 
-With custom config file:
+**Note:** The optional config file parameter is deprecated. All configuration should be in `.env`:
 ```bash
+# This still works but is not recommended - use .env instead
 python -m bot.main /path/to/config.json
 ```
 
@@ -362,11 +364,14 @@ To add custom risk calculations:
 
 ## Security Considerations
 
-- **Never commit API keys**: Use environment variables or separate config files
+- **Never commit API keys or private keys**: All sensitive data must be in `.env` file only (which is gitignored)
+- **Configuration separation**: `config.json` contains no sensitive data - only documentation
+- **Environment variables**: All credentials and wallet addresses are loaded from `.env`
 - **Secure RPC access**: Use authenticated RPC endpoints
-- **Private key safety**: Bot doesn't handle private keys directly
+- **Private key safety**: Hyperliquid private key is used for signing but never exposed in logs
 - **Monitor access**: Regularly review API key permissions
 - **Update dependencies**: Keep dependencies up to date for security patches
+- **Backup .env securely**: Keep encrypted backups of your `.env` file in a secure location
 
 ## Performance Optimization
 
