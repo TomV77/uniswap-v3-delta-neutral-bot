@@ -385,5 +385,201 @@ class TestRiskMetrics(unittest.TestCase):
         self.assertFalse(metrics.needs_rebalance)
 
 
+class TestRiskManagementEdgeCases(unittest.TestCase):
+    """Test edge cases and error handling in RiskManagement"""
+    
+    def setUp(self):
+        """Set up test fixtures"""
+        self.config = {
+            'delta_threshold': 0.1,
+            'max_impermanent_loss': 0.05,
+            'min_fee_coverage': 1.5,
+            'rebalance_threshold': 0.05,
+            'var_confidence': 0.95,
+            'volatility_lookback': 30,
+            'max_position_value': 100000,
+            'max_leverage': 1.0
+        }
+        self.risk_manager = RiskManagement(self.config)
+    
+    def test_calculate_concentrated_il_equal_bounds(self):
+        """Test concentrated IL when upper_price equals lower_price"""
+        il = self.risk_manager.calculate_concentrated_il(
+            current_price=Decimal('2000'),
+            lower_price=Decimal('2000'),
+            upper_price=Decimal('2000'),
+            entry_price=Decimal('2000')
+        )
+        
+        # Should handle gracefully and return 0
+        self.assertEqual(il, Decimal('0'))
+    
+    def test_calculate_concentrated_il_inverted_bounds(self):
+        """Test concentrated IL when upper_price < lower_price"""
+        il = self.risk_manager.calculate_concentrated_il(
+            current_price=Decimal('2000'),
+            lower_price=Decimal('2200'),
+            upper_price=Decimal('1800'),
+            entry_price=Decimal('2000')
+        )
+        
+        # Should handle gracefully and return 0
+        self.assertEqual(il, Decimal('0'))
+    
+    def test_calculate_concentrated_il_negative_price(self):
+        """Test concentrated IL with negative current price"""
+        il = self.risk_manager.calculate_concentrated_il(
+            current_price=Decimal('-100'),
+            lower_price=Decimal('1800'),
+            upper_price=Decimal('2200'),
+            entry_price=Decimal('2000')
+        )
+        
+        # Should handle gracefully and return 0
+        self.assertEqual(il, Decimal('0'))
+    
+    def test_should_hedge_with_zero_il(self):
+        """Test hedge decision with zero IL but high delta"""
+        metrics = RiskMetrics(
+            impermanent_loss=Decimal('0'),
+            impermanent_loss_percent=Decimal('0'),
+            accumulated_fees=Decimal('100'),
+            net_pnl=Decimal('100'),
+            downside_risk=Decimal('500'),
+            value_at_risk=Decimal('300'),
+            delta=Decimal('0.15'),  # High delta
+            gamma=Decimal('100'),
+            needs_rebalance=False,
+            recommended_hedge_size=Decimal('0.15')
+        )
+        
+        should_hedge = self.risk_manager.should_hedge(metrics)
+        self.assertTrue(should_hedge)  # Should hedge due to high delta
+    
+    def test_should_hedge_with_zero_fees_and_il(self):
+        """Test hedge decision with both zero fees and zero IL"""
+        metrics = RiskMetrics(
+            impermanent_loss=Decimal('0'),
+            impermanent_loss_percent=Decimal('0'),
+            accumulated_fees=Decimal('0'),
+            net_pnl=Decimal('0'),
+            downside_risk=Decimal('500'),
+            value_at_risk=Decimal('300'),
+            delta=Decimal('0.05'),
+            gamma=Decimal('100'),
+            needs_rebalance=False,
+            recommended_hedge_size=Decimal('0')
+        )
+        
+        should_hedge = self.risk_manager.should_hedge(metrics)
+        self.assertFalse(should_hedge)  # Should not hedge
+    
+    def test_calculate_optimal_hedge_size_zero_hedge(self):
+        """Test optimal hedge with zero current hedge"""
+        adjustment = self.risk_manager.calculate_optimal_hedge_size(
+            current_delta=Decimal('2.0'),
+            current_hedge_position=Decimal('0'),
+            target_delta=Decimal('0')
+        )
+        
+        # Should need to hedge full delta
+        self.assertEqual(adjustment, Decimal('2.0'))
+    
+    def test_calculate_optimal_hedge_size_overhedged(self):
+        """Test optimal hedge when position is over-hedged"""
+        adjustment = self.risk_manager.calculate_optimal_hedge_size(
+            current_delta=Decimal('1.0'),
+            current_hedge_position=Decimal('-2.0'),
+            target_delta=Decimal('0')
+        )
+        
+        # Net delta = 1.0 + (-2.0) = -1.0
+        # Need to reduce hedge (positive adjustment to close shorts)
+        self.assertEqual(adjustment, Decimal('-1.0'))
+    
+    def test_calculate_position_delta_very_small_price(self):
+        """Test delta calculation with very small price"""
+        delta = self.risk_manager.calculate_position_delta(
+            token0_amount=Decimal('1.0'),
+            token1_amount=Decimal('1000'),
+            current_price=Decimal('0.001')
+        )
+        
+        # token1_in_token0 = 1000 / 0.001 = 1,000,000
+        # delta = 1.0 - 1,000,000 = -999,999
+        self.assertLess(delta, Decimal('0'))
+        self.assertGreater(delta, Decimal('-1000000'))
+    
+    def test_calculate_gamma_with_zero_liquidity(self):
+        """Test gamma calculation with zero liquidity"""
+        gamma = self.risk_manager.calculate_gamma(
+            liquidity=Decimal('0'),
+            current_tick=0,
+            tick_lower=-1000,
+            tick_upper=1000
+        )
+        
+        # Should return 0 for zero liquidity
+        self.assertEqual(gamma, Decimal('0'))
+    
+    def test_calculate_gamma_at_range_edge(self):
+        """Test gamma calculation when price is exactly at range bounds"""
+        # At lower bound
+        gamma_lower = self.risk_manager.calculate_gamma(
+            liquidity=Decimal('1000000'),
+            current_tick=-1000,
+            tick_lower=-1000,
+            tick_upper=1000
+        )
+        
+        # At upper bound
+        gamma_upper = self.risk_manager.calculate_gamma(
+            liquidity=Decimal('1000000'),
+            current_tick=1000,
+            tick_lower=-1000,
+            tick_upper=1000
+        )
+        
+        # Should be positive at edges but lower than center
+        self.assertGreaterEqual(gamma_lower, Decimal('0'))
+        self.assertGreaterEqual(gamma_upper, Decimal('0'))
+    
+    def test_assess_risk_level_high_negative_pnl(self):
+        """Test risk level assessment with high negative PnL"""
+        metrics = RiskMetrics(
+            impermanent_loss=Decimal('1000'),
+            impermanent_loss_percent=Decimal('0.10'),
+            accumulated_fees=Decimal('100'),
+            net_pnl=Decimal('-1500'),  # Very negative
+            downside_risk=Decimal('500'),
+            value_at_risk=Decimal('300'),
+            delta=Decimal('0.05'),
+            gamma=Decimal('100'),
+            needs_rebalance=False,
+            recommended_hedge_size=Decimal('0')
+        )
+        
+        risk_level = self.risk_manager._assess_risk_level(metrics)
+        self.assertEqual(risk_level, 'HIGH')
+    
+    def test_assess_risk_level_very_high_delta(self):
+        """Test risk level assessment with very high delta"""
+        metrics = RiskMetrics(
+            impermanent_loss=Decimal('100'),
+            impermanent_loss_percent=Decimal('0.02'),
+            accumulated_fees=Decimal('200'),
+            net_pnl=Decimal('100'),
+            downside_risk=Decimal('500'),
+            value_at_risk=Decimal('300'),
+            delta=Decimal('0.25'),  # More than 2x threshold (0.1)
+            gamma=Decimal('100'),
+            needs_rebalance=False,
+            recommended_hedge_size=Decimal('0.25')
+        )
+        
+        risk_level = self.risk_manager._assess_risk_level(metrics)
+        self.assertEqual(risk_level, 'HIGH')
+
+
 if __name__ == '__main__':
     unittest.main()

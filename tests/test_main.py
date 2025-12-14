@@ -301,5 +301,113 @@ class TestDeltaNeutralBot(unittest.TestCase):
         self.assertFalse(self.bot.running)
 
 
+class TestDeltaNeutralBotEdgeCases(unittest.TestCase):
+    """Test edge cases for DeltaNeutralBot"""
+    
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create a temporary config file
+        self.temp_config = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
+        config_data = {
+            'wallet_address': '0xTestWallet',
+            'rpc_url': 'https://test.rpc',
+            'update_interval_seconds': 1,
+            'hedge_symbol': 'ETH-USD',
+            'delta_threshold': 0.1
+        }
+        json.dump(config_data, self.temp_config)
+        self.temp_config.close()
+        
+        self.bot = DeltaNeutralBot(self.temp_config.name)
+    
+    def tearDown(self):
+        """Clean up"""
+        os.unlink(self.temp_config.name)
+    
+    @pytest.mark.asyncio
+    @patch('bot.main.HedgingExecutor.increase_hedge')
+    @patch('bot.main.RiskManagement.calculate_optimal_hedge_size')
+    async def test_execute_hedge_correct_delta_calculation(self, mock_calc, mock_increase):
+        """Test that _execute_hedge receives LP delta correctly (not net delta)"""
+        # This test verifies the fix for the delta double-accounting bug
+        mock_calc.return_value = Decimal('1.0')
+        mock_increase.return_value = HedgeResult(
+            success=True,
+            order_id='test-order',
+            executed_size=Decimal('1.0'),
+            executed_price=Decimal('2000'),
+            message='Success'
+        )
+        
+        # Pass LP delta (1.5) and current hedge (-0.5)
+        lp_delta = Decimal('1.5')
+        current_hedge = Decimal('-0.5')
+        
+        await self.bot._execute_hedge(lp_delta, current_hedge)
+        
+        # Verify calculate_optimal_hedge_size was called with correct LP delta
+        mock_calc.assert_called_once()
+        call_args = mock_calc.call_args[1]
+        self.assertEqual(call_args['current_delta'], lp_delta)
+        self.assertEqual(call_args['current_hedge_position'], current_hedge)
+        self.assertEqual(call_args['target_delta'], Decimal('0'))
+    
+    @pytest.mark.asyncio
+    @patch('bot.main.HedgingExecutor.get_current_position')
+    @patch('bot.main.RiskManagement.assess_position_risk')
+    @patch('bot.main.PositionReader.fetch_positions')
+    async def test_run_cycle_delta_threshold_check(self, mock_fetch, mock_assess, mock_get_hedge):
+        """Test that hedging is triggered correctly based on net delta threshold"""
+        # Create test position with delta of 0.15
+        test_position = Position(
+            position_id='test-1',
+            protocol='uniswap',
+            token0='0xToken0',
+            token1='0xToken1',
+            token0_symbol='ETH',
+            token1_symbol='USDC',
+            liquidity=Decimal('1000000'),
+            tick_lower=-887220,
+            tick_upper=887220,
+            current_tick=0,
+            token0_amount=Decimal('1.5'),
+            token1_amount=Decimal('3000'),
+            unclaimed_fees0=Decimal('0.01'),
+            unclaimed_fees1=Decimal('20'),
+            price=Decimal('2000'),
+            total_value_usd=Decimal('6000')
+        )
+        
+        # Create metrics with delta 0.15
+        test_metrics = RiskMetrics(
+            impermanent_loss=Decimal('100'),
+            impermanent_loss_percent=Decimal('0.02'),
+            accumulated_fees=Decimal('20.01'),
+            net_pnl=Decimal('-79.99'),
+            downside_risk=Decimal('500'),
+            value_at_risk=Decimal('300'),
+            delta=Decimal('0.15'),  # Above threshold of 0.1
+            gamma=Decimal('100'),
+            needs_rebalance=True,
+            recommended_hedge_size=Decimal('0.15')
+        )
+        
+        mock_fetch.return_value = [test_position]
+        mock_assess.return_value = test_metrics
+        mock_get_hedge.return_value = Decimal('0')
+        
+        # Run cycle - should trigger hedging
+        with patch.object(self.bot, '_execute_hedge') as mock_execute:
+            mock_execute.return_value = None
+            await self.bot._run_cycle()
+            
+            # Verify hedge was executed with correct parameters
+            mock_execute.assert_called_once()
+            # Should be called with LP delta (0.15) and current hedge (0)
+            call_args = mock_execute.call_args[0]
+            self.assertEqual(call_args[0], Decimal('0.15'))
+            self.assertEqual(call_args[1], Decimal('0'))
+
+
 if __name__ == '__main__':
     unittest.main()
