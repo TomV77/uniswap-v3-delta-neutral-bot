@@ -69,11 +69,11 @@ logger.critical("Invalid private key configuration")  # Fatal errors requiring r
 Always use type hints to make code self-documenting and catch errors early:
 
 ```python
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Any
 from decimal import Decimal
 
 async def calculate_position_delta(
-    position: Dict[str, any],
+    position: Dict[str, Any],
     current_price: Decimal
 ) -> Tuple[Decimal, Dict[str, Decimal]]:
     """
