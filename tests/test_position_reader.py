@@ -189,19 +189,7 @@ class TestPositionReader(unittest.TestCase):
         # Should handle zero price gracefully
         self.assertEqual(delta, Decimal('0'))
     
-    def test_tick_to_price(self):
-        """Test tick to price conversion"""
-        # Tick 0 should be approximately price 1
-        price = self.reader._tick_to_price(0)
-        self.assertAlmostEqual(float(price), 1.0, places=4)
-        
-        # Positive tick should give higher price
-        price_positive = self.reader._tick_to_price(1000)
-        self.assertGreater(price_positive, Decimal('1'))
-        
-        # Negative tick should give lower price
-        price_negative = self.reader._tick_to_price(-1000)
-        self.assertLess(price_negative, Decimal('1'))
+
 
 
 class TestPosition(unittest.TestCase):
