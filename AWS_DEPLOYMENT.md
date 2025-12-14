@@ -28,17 +28,7 @@ sudo apt install -y build-essential libssl-dev libffi-dev python3-dev
 python3.11 --version
 ```
 
-### 2. Create Bot User (Optional but Recommended)
-
-```bash
-# Create dedicated user for the bot
-sudo adduser botuser --disabled-password --gecos ""
-
-# Switch to bot user
-sudo su - botuser
-```
-
-### 3. Clone Repository
+### 2. Clone Repository
 
 ```bash
 # Clone the repository
@@ -107,6 +97,7 @@ python -c "from bot.main import DeltaNeutralBot; import os; os.environ.setdefaul
 
 ```bash
 # Create systemd service file (run as root or with sudo)
+# Note: Replace $USER with your actual username in the paths below
 sudo tee /etc/systemd/system/delta-bot.service > /dev/null <<EOF
 [Unit]
 Description=Delta-Neutral Hedging Bot
@@ -114,14 +105,14 @@ After=network.target
 
 [Service]
 Type=simple
-User=botuser
-WorkingDirectory=/home/botuser/uniswap-v3-delta-neutral-bot
-Environment="PATH=/home/botuser/uniswap-v3-delta-neutral-bot/venv/bin"
-ExecStart=/home/botuser/uniswap-v3-delta-neutral-bot/venv/bin/python -m bot.main config.local.json
+User=$USER
+WorkingDirectory=$HOME/uniswap-v3-delta-neutral-bot
+Environment="PATH=$HOME/uniswap-v3-delta-neutral-bot/venv/bin"
+ExecStart=$HOME/uniswap-v3-delta-neutral-bot/venv/bin/python -m bot.main config.local.json
 Restart=always
 RestartSec=10
-StandardOutput=append:/home/botuser/uniswap-v3-delta-neutral-bot/bot.log
-StandardError=append:/home/botuser/uniswap-v3-delta-neutral-bot/bot-error.log
+StandardOutput=append:$HOME/uniswap-v3-delta-neutral-bot/bot.log
+StandardError=append:$HOME/uniswap-v3-delta-neutral-bot/bot-error.log
 
 [Install]
 WantedBy=multi-user.target
@@ -185,7 +176,7 @@ sudo ufw status
 chmod 600 .env
 
 # Ensure only owner can read private keys
-ls -la .env  # Should show: -rw------- 1 botuser botuser
+ls -la .env  # Should show: -rw------- 1 username username
 ```
 
 ### SSH Key Authentication (Disable Password Login)
@@ -195,7 +186,7 @@ ls -la .env  # Should show: -rw------- 1 botuser botuser
 ssh-keygen -t ed25519 -C "your_email@example.com"
 
 # Copy public key to server
-ssh-copy-id -i ~/.ssh/id_ed25519.pub botuser@your-server-ip
+ssh-copy-id -i ~/.ssh/id_ed25519.pub username@your-server-ip
 
 # On server, disable password authentication
 sudo nano /etc/ssh/sshd_config
@@ -211,13 +202,13 @@ sudo systemctl restart sshd
 ```bash
 # Create log rotation config
 sudo tee /etc/logrotate.d/delta-bot > /dev/null <<EOF
-/home/botuser/uniswap-v3-delta-neutral-bot/*.log {
+$HOME/uniswap-v3-delta-neutral-bot/*.log {
     daily
     rotate 7
     compress
     delaycompress
     notifempty
-    create 0644 botuser botuser
+    create 0644 $USER $USER
     sharedscripts
     postrotate
         systemctl reload delta-bot > /dev/null 2>&1 || true
@@ -233,13 +224,13 @@ EOF
 cat > ~/backup-config.sh <<'EOF'
 #!/bin/bash
 DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR="/home/botuser/backups"
+BACKUP_DIR="$HOME/backups"
 mkdir -p $BACKUP_DIR
 
 # Backup configuration files
 tar -czf $BACKUP_DIR/config_backup_$DATE.tar.gz \
-    /home/botuser/uniswap-v3-delta-neutral-bot/.env \
-    /home/botuser/uniswap-v3-delta-neutral-bot/config.local.json
+    $HOME/uniswap-v3-delta-neutral-bot/.env \
+    $HOME/uniswap-v3-delta-neutral-bot/config.local.json
 
 # Keep only last 7 days of backups
 find $BACKUP_DIR -name "config_backup_*.tar.gz" -mtime +7 -delete
@@ -250,7 +241,7 @@ EOF
 chmod +x ~/backup-config.sh
 
 # Add to crontab (daily backup at 2 AM)
-(crontab -l 2>/dev/null; echo "0 2 * * * /home/botuser/backup-config.sh") | crontab -
+(crontab -l 2>/dev/null; echo "0 2 * * * $HOME/backup-config.sh") | crontab -
 ```
 
 ### Health Checks
@@ -268,7 +259,7 @@ if ! systemctl is-active --quiet delta-bot; then
 fi
 
 # Check for recent errors in logs
-ERRORS=$(tail -n 100 /home/botuser/uniswap-v3-delta-neutral-bot/bot-error.log | grep -c "ERROR")
+ERRORS=$(tail -n 100 $HOME/uniswap-v3-delta-neutral-bot/bot-error.log | grep -c "ERROR")
 if [ $ERRORS -gt 10 ]; then
     echo "WARNING: $ERRORS errors found in recent logs"
 fi
@@ -279,7 +270,7 @@ EOF
 chmod +x ~/check-bot-health.sh
 
 # Run health check every 5 minutes
-(crontab -l 2>/dev/null; echo "*/5 * * * * /home/botuser/check-bot-health.sh >> /home/botuser/health-check.log 2>&1") | crontab -
+(crontab -l 2>/dev/null; echo "*/5 * * * * $HOME/check-bot-health.sh >> $HOME/health-check.log 2>&1") | crontab -
 ```
 
 ## Updating the Bot
