@@ -385,7 +385,9 @@ class PositionReader:
             # - Impermanent loss sensitivity
             
             # Convert token1 amount to token0 equivalent
-            # Price is token1/token0, so divide to get token0 equivalent
+            # If price = 2000 (meaning 1 token0 = 2000 token1, e.g., 1 ETH = 2000 USDC)
+            # Then to convert token1 to token0: divide by price
+            # Example: 3000 USDC / 2000 = 1.5 ETH equivalent
             if position.price > 0:
                 token1_in_token0 = position.token1_amount / position.price
                 net_delta = position.token0_amount - token1_in_token0

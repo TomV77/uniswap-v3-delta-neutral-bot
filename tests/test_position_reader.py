@@ -188,8 +188,6 @@ class TestPositionReader(unittest.TestCase):
         
         # Should handle zero price gracefully
         self.assertEqual(delta, Decimal('0'))
-    
-
 
 
 class TestPosition(unittest.TestCase):
