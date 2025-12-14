@@ -385,8 +385,9 @@ class PositionReader:
             # - Impermanent loss sensitivity
             
             # Convert token1 amount to token0 equivalent
+            # Price is token1/token0, so divide to get token0 equivalent
             if position.price > 0:
-                token1_in_token0 = position.token1_amount * position.price
+                token1_in_token0 = position.token1_amount / position.price
                 net_delta = position.token0_amount - token1_in_token0
                 return net_delta
             else:
