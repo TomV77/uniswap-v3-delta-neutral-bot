@@ -34,10 +34,15 @@ class TestDeltaNeutralBot(unittest.TestCase):
         json.dump(config_data, self.temp_config)
         self.temp_config.close()
         
+        # Patch load_config_from_env to prevent environment variables from overriding test config
+        self.env_patcher = patch('bot.config.load_config_from_env', return_value={})
+        self.env_patcher.start()
+        
         self.bot = DeltaNeutralBot(self.temp_config.name)
     
     def tearDown(self):
         """Clean up"""
+        self.env_patcher.stop()
         os.unlink(self.temp_config.name)
     
     def test_initialization(self):
@@ -318,10 +323,15 @@ class TestDeltaNeutralBotEdgeCases(unittest.TestCase):
         json.dump(config_data, self.temp_config)
         self.temp_config.close()
         
+        # Patch load_config_from_env to prevent environment variables from overriding test config
+        self.env_patcher = patch('bot.config.load_config_from_env', return_value={})
+        self.env_patcher.start()
+        
         self.bot = DeltaNeutralBot(self.temp_config.name)
     
     def tearDown(self):
         """Clean up"""
+        self.env_patcher.stop()
         os.unlink(self.temp_config.name)
     
     @pytest.mark.asyncio
