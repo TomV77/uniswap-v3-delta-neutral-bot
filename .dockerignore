@@ -1,0 +1,82 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Environment and Secrets
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation
+*.md
+!README.md
+docs/
+AGENTS.md
+IMPLEMENTATION.md
+TEST_FIXES_SUMMARY.md
+POSITION_DETECTION_FIXES.md
+FINAL_SUMMARY.md
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+temp/
+tmp/
+
+# Backup files
+*.backup
+*.bak
+
+# CI/CD
+.github/
+
+# Docker
+docker-compose.override.yml
+Dockerfile.dev
+
+# Examples and tests
+examples.py
+tests/
+pytest.ini
+
+# AWS
+AWS_DEPLOYMENT.md
+
+# Config backups
+config.local.json
+config.*.json
+!config.json

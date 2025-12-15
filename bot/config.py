@@ -101,6 +101,13 @@ def load_config_from_env() -> Dict[str, Any]:
     if os.getenv('CLOSE_POSITIONS_ON_SHUTDOWN'):
         config['close_positions_on_shutdown'] = os.getenv('CLOSE_POSITIONS_ON_SHUTDOWN').lower() == 'true'
     
+    # Connection retry settings
+    if os.getenv('MAX_RPC_RETRIES'):
+        config['max_rpc_retries'] = int(os.getenv('MAX_RPC_RETRIES'))
+    
+    if os.getenv('RPC_RETRY_DELAY'):
+        config['rpc_retry_delay'] = int(os.getenv('RPC_RETRY_DELAY'))
+    
     return config
 
 
@@ -165,5 +172,7 @@ def get_default_config() -> Dict[str, Any]:
         "slippage_tolerance": 0.005,
         "max_daily_trades": 100,
         "hyperliquid_testnet": True,
-        "close_positions_on_shutdown": False
+        "close_positions_on_shutdown": False,
+        "max_rpc_retries": 3,
+        "rpc_retry_delay": 2
     }

@@ -1,6 +1,8 @@
 # AWS Deployment Guide - t3.small Instance
 
-This guide provides step-by-step instructions for deploying the Delta-Neutral Hedging Bot on an AWS t3.small instance.
+This guide provides step-by-step instructions for deploying the Delta-Neutral Hedging Bot on an AWS t3.small instance using traditional systemd service.
+
+**Recommended:** For easier deployment and better isolation, see [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) for Docker-based deployment instructions.
 
 ## AWS Instance Specifications
 
@@ -9,6 +11,41 @@ This guide provides step-by-step instructions for deploying the Delta-Neutral He
 - **Memory**: 2 GB
 - **OS**: Ubuntu 22.04 LTS (recommended)
 - **Storage**: 20 GB EBS (minimum)
+
+## Deployment Methods
+
+### Method 1: Docker Deployment (Recommended)
+
+For Docker deployment on AWS, which provides better isolation and fewer configuration issues, see [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md).
+
+**Quick Docker Setup:**
+```bash
+# Install Docker
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y docker.io docker-compose git
+
+# Clone and configure
+cd ~
+git clone https://github.com/TomV77/uniswap-v3-delta-neutral-bot.git
+cd uniswap-v3-delta-neutral-bot
+cp .env.example .env
+nano .env  # Configure your settings
+mkdir -p logs
+
+# Build and start
+docker compose build
+docker compose up -d
+
+# Check status
+docker compose ps
+docker compose logs --tail=50
+```
+
+See [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) for complete instructions.
+
+### Method 2: Traditional Systemd Service
+
+This section covers traditional Python virtual environment deployment with systemd service.
 
 ## Quick Setup - Copy & Paste Commands
 
