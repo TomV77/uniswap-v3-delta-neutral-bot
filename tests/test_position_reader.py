@@ -240,8 +240,6 @@ class TestPositionReaderErrorHandling(unittest.TestCase):
     @patch('bot.position_reader.aiohttp.ClientSession')
     async def test_fetch_sickle_positions_timeout(self, mock_session):
         """Test handling of timeout from VFAT API"""
-        import asyncio
-        
         mock_get = AsyncMock()
         mock_get.side_effect = asyncio.TimeoutError("Request timed out")
         

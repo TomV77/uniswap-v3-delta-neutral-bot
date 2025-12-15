@@ -131,6 +131,7 @@ class PositionReader:
                     return positions
                 
                 for i in range(balance):
+                    token_id = None  # Initialize to avoid NameError in exception handling
                     try:
                         token_id = nft_contract.functions.tokenOfOwnerByIndex(wallet_address, i).call()
                         logger.debug(f"Processing NFT token ID: {token_id}")
@@ -143,7 +144,7 @@ class PositionReader:
                             positions.append(position)
                             logger.info(f"Successfully parsed position {token_id}")
                     except Exception as e:
-                        logger.error(f"Error processing Uniswap position {i} (token {token_id if 'token_id' in locals() else 'unknown'}): {e}")
+                        logger.error(f"Error processing Uniswap position {i} (token {token_id if token_id else 'unknown'}): {e}")
                         continue
         except Exception as e:
             logger.error(f"Error in _fetch_uniswap_positions: {e}", exc_info=True)
@@ -183,6 +184,7 @@ class PositionReader:
                     return positions
                 
                 for i in range(balance):
+                    token_id = None  # Initialize to avoid NameError in exception handling
                     try:
                         token_id = nft_contract.functions.tokenOfOwnerByIndex(wallet_address, i).call()
                         logger.debug(f"Processing Aerodrome NFT token ID: {token_id}")
@@ -195,7 +197,7 @@ class PositionReader:
                             positions.append(position)
                             logger.info(f"Successfully parsed Aerodrome position {token_id}")
                     except Exception as e:
-                        logger.error(f"Error processing Aerodrome position {i} (token {token_id if 'token_id' in locals() else 'unknown'}): {e}")
+                        logger.error(f"Error processing Aerodrome position {i} (token {token_id if token_id else 'unknown'}): {e}")
                         continue
         except Exception as e:
             logger.error(f"Error in _fetch_aerodrome_positions: {e}", exc_info=True)
@@ -264,7 +266,13 @@ class PositionReader:
     async def _fetch_sickle_positions_from_contract(self, wallet_address: str) -> List[Position]:
         """
         Fetch positions directly from sickle contract via Web3.
-        This is a placeholder for direct contract interaction.
+        
+        TODO: Implement direct sickle contract interaction.
+        Required information:
+        - Sickle contract ABI (needs to be obtained from contract deployment or Etherscan)
+        - Contract methods for querying positions (likely: getUserPositions(), getPosition(), etc.)
+        - Position data structure returned by the contract
+        - Reference: https://vfat.io or sickle contract documentation
         """
         positions = []
         
@@ -272,10 +280,9 @@ class PositionReader:
             return positions
         
         try:
-            # TODO: Implement direct sickle contract interaction
-            # This would require the sickle contract ABI and knowledge of its interface
             logger.info("Direct sickle contract querying not yet implemented")
             logger.info(f"Sickle contract address: {self.sickle_contract_address}")
+            logger.info("To implement: obtain sickle contract ABI and implement position fetching logic")
         except Exception as e:
             logger.error(f"Error fetching from sickle contract: {e}", exc_info=True)
         
