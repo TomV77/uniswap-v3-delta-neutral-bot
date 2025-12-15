@@ -6,7 +6,8 @@
   "_security_warning": "NEVER commit sensitive data (private keys, API secrets, wallet addresses) to this file",
   
   "descriptions": {
-    "wallet_address": "Ethereum wallet address holding LP positions (env: WALLET_ADDRESS)",
+    "wallet_address": "Ethereum wallet address for Hyperliquid trading operations (env: WALLET_ADDRESS)",
+    "vfat_sickle_wallet_address": "Ethereum wallet address holding LP positions for position tracking (env: VFAT_SICKLE_ADDRESS)",
     "rpc_url": "Base Chain RPC endpoint URL (env: RPC_URL) - Bot exclusively uses Base chain",
     "vfat_api_url": "vfat.io API endpoint for sickle contracts (env: VFAT_API_URL)",
     "sickle_contract_address": "Address of the sickle contract on Base (env: VFAT_SICKLE_ADDRESS)",

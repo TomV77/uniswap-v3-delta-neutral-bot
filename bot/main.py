@@ -61,7 +61,8 @@ class DeltaNeutralBot:
         
         # Bot state
         self.running = False
-        self.wallet_address = self.config.get('wallet_address', '')
+        self.wallet_address = self.config.get('wallet_address', '')  # Hyperliquid trading wallet
+        self.vfat_sickle_wallet_address = self.config.get('vfat_sickle_wallet_address', '')  # LP position wallet
         self.update_interval = self.config.get('update_interval_seconds', 60)
         self.hedge_symbol = self.config.get('hedge_symbol', 'ETH-USD')
         
@@ -71,6 +72,8 @@ class DeltaNeutralBot:
         self.total_pnl = Decimal(0)
         
         logger.info("DeltaNeutralBot initialized")
+        logger.info(f"Hyperliquid trading wallet: {self.wallet_address}")
+        logger.info(f"LP position tracking wallet (VFAT_SICKLE_ADDRESS): {self.vfat_sickle_wallet_address}")
     
 
     
@@ -144,12 +147,13 @@ class DeltaNeutralBot:
     async def _fetch_positions(self) -> List[Position]:
         """Fetch all positions"""
         logger.info("Fetching positions...")
+        logger.info(f"Using LP position wallet (VFAT_SICKLE_ADDRESS): {self.vfat_sickle_wallet_address}")
         
-        if not self.wallet_address:
-            logger.error("No wallet address configured")
+        if not self.vfat_sickle_wallet_address:
+            logger.error("No VFAT_SICKLE_ADDRESS configured for position tracking")
             return []
         
-        positions = await self.position_reader.fetch_positions(self.wallet_address)
+        positions = await self.position_reader.fetch_positions(self.vfat_sickle_wallet_address)
         logger.info(f"Found {len(positions)} positions")
         
         return positions

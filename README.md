@@ -153,8 +153,11 @@ cp .env.example .env
 Then edit `.env` with your credentials:
 
 ```bash
-# Main wallet address (Tangem or any EVM wallet with LP positions)
-WALLET_ADDRESS=0xYourTangemWalletAddress
+# Hyperliquid trading wallet address (for hedge trading operations)
+WALLET_ADDRESS=0x2D4de18344D54111d5327AE9F81e0c60D44AEd40
+
+# LP position wallet address (sickle contract wallet holding Uniswap/Aerodrome positions)
+VFAT_SICKLE_ADDRESS=0xa1b402db32ccaeef1e18a52ee1f50aeaa5535d9b
 
 # Hyperliquid API wallet private key (SENSITIVE - never commit this!)
 HYPERLIQUID_PRIVATE_KEY=0xYourHyperliquidPrivateKey
@@ -162,15 +165,18 @@ HYPERLIQUID_PRIVATE_KEY=0xYourHyperliquidPrivateKey
 # RPC endpoint for Base chain
 RPC_URL=https://base-mainnet.infura.io/v3/YOUR_INFURA_KEY
 
-# VFAT Sickle contract on Base chain
-VFAT_SICKLE_ADDRESS=0xYourSickleContractAddress
-
 # Risk thresholds and bot parameters
 DELTA_THRESHOLD=0.1
 REBALANCE_THRESHOLD=0.05
 MAX_POSITION_SIZE=10.0
 UPDATE_INTERVAL_SECONDS=60
 ```
+
+**Important:** The bot uses two distinct wallet addresses:
+- **WALLET_ADDRESS**: Your Hyperliquid trading wallet used for executing hedge trades
+- **VFAT_SICKLE_ADDRESS**: Your LP position wallet (sickle contract) holding Uniswap V3/Aerodrome positions on Base Chain
+
+These can be the same address or different addresses depending on your setup.
 
 See [.env.example](.env.example) for the complete list of all configuration options with detailed descriptions.
 

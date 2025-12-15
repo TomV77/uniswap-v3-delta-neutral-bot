@@ -57,6 +57,7 @@ class HedgingExecutor:
         self.api_secret = config.get('hyperliquid_api_secret', '')
         self.api_url = config.get('hyperliquid_api_url', 'https://api.hyperliquid.xyz')
         self.testnet = config.get('hyperliquid_testnet', True)
+        self.wallet_address = config.get('wallet_address', '')  # Hyperliquid trading wallet
         
         # Hedging parameters
         self.max_position_size = Decimal(str(config.get('max_position_size', 10.0)))
@@ -67,6 +68,8 @@ class HedgingExecutor:
         self.max_daily_trades = config.get('max_daily_trades', 100)
         self.daily_trade_count = 0
         self.last_reset_time = time.time()
+        
+        logger.info(f"HedgingExecutor initialized for Hyperliquid trading wallet (WALLET_ADDRESS): {self.wallet_address}")
     
     async def execute_hedge(self, hedge_order: HedgeOrder) -> HedgeResult:
         """
@@ -78,7 +81,8 @@ class HedgingExecutor:
         Returns:
             HedgeResult with execution details
         """
-        logger.info(f"Executing hedge: {hedge_order.side.value} {hedge_order.size} {hedge_order.symbol}")
+        logger.info(f"Executing hedge on Hyperliquid with trading wallet (WALLET_ADDRESS): {self.wallet_address}")
+        logger.info(f"Hedge order: {hedge_order.side.value} {hedge_order.size} {hedge_order.symbol}")
         
         # Safety checks
         if not self._check_safety_limits(hedge_order):
@@ -350,8 +354,8 @@ class HedgingExecutor:
     
     def _get_user_address(self) -> str:
         """Get user's Ethereum address for Hyperliquid"""
-        # In production, this would derive from the API key/private key
-        return self.config.get('wallet_address', '')
+        # Return the Hyperliquid trading wallet address
+        return self.wallet_address
     
     def _symbol_to_asset_id(self, symbol: str) -> int:
         """Convert symbol to Hyperliquid asset ID"""
