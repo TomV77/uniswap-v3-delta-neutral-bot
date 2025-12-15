@@ -132,9 +132,18 @@ class RiskManagement:
             
             # For concentrated positions, IL is amplified within the range
             # Approximate using the concentration factor
-            concentration_factor = Decimal(2) / (
-                (upper_price - lower_price) / ((upper_price + lower_price) / 2)
-            )
+            range_width = upper_price - lower_price
+            if range_width <= 0:
+                logger.warning("Invalid range: upper_price <= lower_price")
+                return Decimal(0)
+            
+            mid_price = (upper_price + lower_price) / 2
+            if mid_price <= 0:
+                return Decimal(0)
+            
+            # Concentration factor based on range width
+            # Narrower ranges have higher concentration
+            concentration_factor = Decimal(2) / (range_width / mid_price)
             
             base_il = self.calculate_impermanent_loss(
                 entry_price,

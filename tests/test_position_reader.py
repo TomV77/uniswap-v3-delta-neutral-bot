@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import Mock, patch, AsyncMock
 from decimal import Decimal
 import asyncio
+import pytest
 
 from bot.position_reader import PositionReader, Position
 
@@ -35,6 +36,7 @@ class TestPositionReader(unittest.TestCase):
         reader = PositionReader(config)
         self.assertIsNone(reader.w3)
     
+    @pytest.mark.asyncio
     @patch('bot.position_reader.aiohttp.ClientSession')
     async def test_fetch_sickle_positions(self, mock_session):
         """Test fetching positions from sickle contracts"""
@@ -110,6 +112,7 @@ class TestPositionReader(unittest.TestCase):
         # Should handle gracefully and return a position with defaults
         self.assertIsNotNone(position)
     
+    @pytest.mark.asyncio
     async def test_get_position_delta(self):
         """Test delta calculation for a position"""
         position = Position(
@@ -137,6 +140,7 @@ class TestPositionReader(unittest.TestCase):
         # = 1.5 - (3000 / 2000) = 1.5 - 1.5 = 0
         self.assertEqual(delta, Decimal('0'))
     
+    @pytest.mark.asyncio
     async def test_get_position_delta_long(self):
         """Test delta calculation for long-biased position"""
         position = Position(
@@ -163,6 +167,7 @@ class TestPositionReader(unittest.TestCase):
         # Delta = 2.0 - (2000 / 2000) = 2.0 - 1.0 = 1.0 (long)
         self.assertEqual(delta, Decimal('1.0'))
     
+    @pytest.mark.asyncio
     async def test_get_position_delta_zero_price(self):
         """Test delta calculation with zero price"""
         position = Position(

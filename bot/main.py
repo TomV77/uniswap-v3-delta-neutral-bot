@@ -125,10 +125,13 @@ class DeltaNeutralBot:
             logger.info(f"Net Delta: {net_delta}")
             
             # Step 5: Determine if hedging is needed
+            # Check net delta (LP + hedge) against threshold to decide if action needed
             needs_hedge = abs(net_delta) > self.risk_manager.delta_threshold
             
             if needs_hedge:
-                await self._execute_hedge(net_delta, current_hedge)
+                # Pass LP delta (not net) to calculate required hedge adjustment
+                # The hedge calculator will account for current_hedge internally
+                await self._execute_hedge(total_delta, current_hedge)
             else:
                 logger.info("Position is within delta threshold, no hedging needed")
             
@@ -187,19 +190,19 @@ class DeltaNeutralBot:
         
         return total_delta, risk_metrics_list
     
-    async def _execute_hedge(self, net_delta: Decimal, current_hedge: Decimal):
+    async def _execute_hedge(self, lp_delta: Decimal, current_hedge: Decimal):
         """
         Execute hedge to neutralize delta.
         
         Args:
-            net_delta: Current net delta including hedge
+            lp_delta: Current LP position delta (without hedge)
             current_hedge: Current hedge position
         """
         logger.info("Executing hedge adjustment...")
         
         # Calculate required adjustment
         required_adjustment = self.risk_manager.calculate_optimal_hedge_size(
-            current_delta=net_delta - current_hedge,
+            current_delta=lp_delta,
             current_hedge_position=current_hedge,
             target_delta=Decimal(0)
         )

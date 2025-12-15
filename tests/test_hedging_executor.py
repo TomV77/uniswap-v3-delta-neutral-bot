@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import Mock, patch, AsyncMock
 from decimal import Decimal
 import asyncio
+import pytest
 
 from bot.hedging_executor import (
     HedgingExecutor,
@@ -90,6 +91,7 @@ class TestHedgingExecutor(unittest.TestCase):
         result = self.executor._check_safety_limits(order)
         self.assertFalse(result)
     
+    @pytest.mark.asyncio
     @patch('bot.hedging_executor.aiohttp.ClientSession')
     async def test_get_market_price(self, mock_session):
         """Test getting market price"""
@@ -107,6 +109,7 @@ class TestHedgingExecutor(unittest.TestCase):
         self.assertIsNotNone(price)
         self.assertEqual(price, Decimal('2000.50'))
     
+    @pytest.mark.asyncio
     @patch('bot.hedging_executor.aiohttp.ClientSession')
     async def test_get_market_price_not_found(self, mock_session):
         """Test getting market price for non-existent symbol"""
@@ -123,6 +126,7 @@ class TestHedgingExecutor(unittest.TestCase):
         
         self.assertIsNone(price)
     
+    @pytest.mark.asyncio
     @patch('bot.hedging_executor.aiohttp.ClientSession')
     async def test_get_current_position(self, mock_session):
         """Test getting current position"""
@@ -147,6 +151,7 @@ class TestHedgingExecutor(unittest.TestCase):
         self.assertIsNotNone(position)
         self.assertEqual(position, Decimal('-2.5'))
     
+    @pytest.mark.asyncio
     @patch('bot.hedging_executor.aiohttp.ClientSession')
     async def test_get_current_position_none(self, mock_session):
         """Test getting current position when no position exists"""
@@ -163,6 +168,7 @@ class TestHedgingExecutor(unittest.TestCase):
         
         self.assertEqual(position, Decimal('0'))
     
+    @pytest.mark.asyncio
     @patch.object(HedgingExecutor, '_get_market_price')
     @patch.object(HedgingExecutor, '_place_order')
     async def test_execute_hedge_buy(self, mock_place_order, mock_get_price):
@@ -189,6 +195,7 @@ class TestHedgingExecutor(unittest.TestCase):
         self.assertEqual(result.order_id, 'test-order-1')
         self.assertEqual(self.executor.daily_trade_count, 1)
     
+    @pytest.mark.asyncio
     @patch.object(HedgingExecutor, '_get_market_price')
     async def test_execute_hedge_no_price(self, mock_get_price):
         """Test executing hedge when market price unavailable"""
@@ -206,6 +213,7 @@ class TestHedgingExecutor(unittest.TestCase):
         self.assertFalse(result.success)
         self.assertIn('price', result.message.lower())
     
+    @pytest.mark.asyncio
     @patch.object(HedgingExecutor, 'execute_hedge')
     async def test_increase_hedge(self, mock_execute_hedge):
         """Test increasing hedge position"""
@@ -219,6 +227,7 @@ class TestHedgingExecutor(unittest.TestCase):
         self.assertEqual(call_args.side, OrderSide.SELL)
         self.assertEqual(call_args.size, Decimal('1.5'))
     
+    @pytest.mark.asyncio
     @patch.object(HedgingExecutor, 'execute_hedge')
     async def test_decrease_hedge(self, mock_execute_hedge):
         """Test decreasing hedge position"""
