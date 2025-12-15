@@ -145,12 +145,12 @@ class PositionReader:
         Fetch all positions for a given wallet address.
         
         Args:
-            wallet_address: Ethereum address of the wallet
+            wallet_address: Ethereum address of the wallet (LP position wallet, not Hyperliquid trading wallet)
             
         Returns:
             List of Position objects
         """
-        logger.info(f"Fetching positions for wallet: {wallet_address}")
+        logger.info(f"Fetching LP positions for VFAT_SICKLE_ADDRESS wallet: {wallet_address}")
         
         positions = []
         
@@ -196,7 +196,7 @@ class PositionReader:
             nft_contract = self._get_uniswap_nft_contract()
             
             if nft_contract:
-                logger.info(f"Fetching Uniswap V3 positions for wallet: {wallet_address}")
+                logger.info(f"Fetching Uniswap V3 positions for VFAT_SICKLE_ADDRESS: {wallet_address}")
                 
                 # Get token IDs owned by wallet with retry logic
                 try:
@@ -260,7 +260,7 @@ class PositionReader:
             nft_contract = self._get_aerodrome_nft_contract()
             
             if nft_contract:
-                logger.info(f"Fetching Aerodrome positions for wallet: {wallet_address}")
+                logger.info(f"Fetching Aerodrome positions for VFAT_SICKLE_ADDRESS: {wallet_address}")
                 
                 # Similar to Uniswap, get positions owned by wallet with retry logic
                 try:

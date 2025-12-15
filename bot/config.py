@@ -21,8 +21,13 @@ def load_config_from_env() -> Dict[str, Any]:
     config = {}
     
     # Wallet configuration
+    # WALLET_ADDRESS: Used for Hyperliquid trading operations
     if os.getenv('WALLET_ADDRESS'):
         config['wallet_address'] = os.getenv('WALLET_ADDRESS')
+    
+    # VFAT_SICKLE_ADDRESS: Used for position tracking (Uniswap V3/Aerodrome positions)
+    if os.getenv('VFAT_SICKLE_ADDRESS'):
+        config['vfat_sickle_wallet_address'] = os.getenv('VFAT_SICKLE_ADDRESS')
     
     # RPC configuration (Base chain only)
     if os.getenv('RPC_URL'):
@@ -154,7 +159,8 @@ def get_default_config() -> Dict[str, Any]:
         Dictionary with default configuration
     """
     return {
-        "wallet_address": "",
+        "wallet_address": "",  # Hyperliquid trading wallet
+        "vfat_sickle_wallet_address": "",  # LP position wallet
         "rpc_url": "",
         "vfat_api_url": "https://api.vfat.io",
         "update_interval_seconds": 60,
