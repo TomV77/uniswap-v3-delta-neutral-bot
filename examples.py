@@ -19,11 +19,12 @@ async def example_position_analysis():
     print("=" * 80)
     
     # Create a mock position (in production, this would be fetched from chain)
+    # Note: These are example token addresses for demonstration purposes only
     position = Position(
         position_id='example-1',
         protocol='uniswap',
-        token0='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',  # WETH
-        token1='0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',  # USDC
+        token0='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',  # WETH (example address)
+        token1='0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',  # USDC (example address)
         token0_symbol='WETH',
         token1_symbol='USDC',
         liquidity=Decimal('1000000'),

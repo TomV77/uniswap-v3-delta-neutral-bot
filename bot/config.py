@@ -24,13 +24,9 @@ def load_config_from_env() -> Dict[str, Any]:
     if os.getenv('WALLET_ADDRESS'):
         config['wallet_address'] = os.getenv('WALLET_ADDRESS')
     
-    # RPC configuration
+    # RPC configuration (Base chain only)
     if os.getenv('RPC_URL'):
         config['rpc_url'] = os.getenv('RPC_URL')
-    elif os.getenv('RPC_URL_BASE'):
-        config['rpc_url'] = os.getenv('RPC_URL_BASE')
-    elif os.getenv('RPC_URL_ETHEREUM'):
-        config['rpc_url'] = os.getenv('RPC_URL_ETHEREUM')
     
     # VFAT configuration
     if os.getenv('VFAT_API_URL'):
@@ -38,11 +34,9 @@ def load_config_from_env() -> Dict[str, Any]:
     if os.getenv('VFAT_SICKLE_ADDRESS'):
         config['sickle_contract_address'] = os.getenv('VFAT_SICKLE_ADDRESS')
     
-    # Contract addresses
+    # Contract addresses (Base chain only)
     if os.getenv('UNISWAP_V3_NFT_ADDRESS'):
         config['uniswap_v3_nft_address'] = os.getenv('UNISWAP_V3_NFT_ADDRESS')
-    elif os.getenv('UNISWAP_V3_NFT_ADDRESS_BASE'):
-        config['uniswap_v3_nft_address'] = os.getenv('UNISWAP_V3_NFT_ADDRESS_BASE')
     
     if os.getenv('AERODROME_NFT_ADDRESS'):
         config['aerodrome_nft_address'] = os.getenv('AERODROME_NFT_ADDRESS')

@@ -294,33 +294,258 @@ chmod +x ~/check-bot-health.sh
 
 ## Updating the Bot
 
+When new commits are pushed to the repository, follow these steps to update your AWS deployment:
+
+### Step 1: Stop the Bot Service
+
+```bash
+# Stop the running bot service
+sudo systemctl stop delta-bot
+
+# Verify it's stopped
+sudo systemctl status delta-bot
+```
+
+### Step 2: Backup Current Configuration
+
+```bash
+# Navigate to bot directory
+cd ~/uniswap-v3-delta-neutral-bot
+
+# Backup your configuration files
+cp .env .env.backup.$(date +%Y%m%d_%H%M%S)
+cp config.local.json config.local.json.backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null || true
+
+# Backup logs (optional)
+cp bot.log bot.log.backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null || true
+cp bot-error.log bot-error.log.backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null || true
+```
+
+### Step 3: Pull Latest Changes
+
+```bash
+# Ensure you're on the main branch
+git checkout main
+
+# Fetch and pull latest changes
+git pull origin main
+
+# If you have local changes that conflict, stash them first:
+# git stash
+# git pull origin main
+# git stash pop
+```
+
+### Step 4: Update Dependencies (if needed)
+
+```bash
+# Activate virtual environment
+source venv/bin/activate
+
+# Update Python packages if requirements.txt changed
+pip install --upgrade -r requirements.txt
+
+# Verify installation
+python -c "from bot.main import DeltaNeutralBot; print('Installation successful!')"
+```
+
+### Step 5: Review Configuration Changes
+
+```bash
+# Check if .env.example has new variables
+diff .env.example .env.backup.* | grep "^<" || echo "No new environment variables"
+
+# If new variables exist, add them to your .env file
+nano .env
+
+# Compare your config with any updates
+# (Only if you use config.local.json)
+diff config.json config.local.json.backup.* 2>/dev/null || true
+```
+
+### Step 6: Test the Update
+
+```bash
+# Run a quick test to ensure everything works
+python -m bot.main --help 2>/dev/null || echo "Ready to start"
+
+# Optional: Run the test suite if available
+python -m pytest tests/ -v 2>/dev/null || echo "Tests not available or failed"
+```
+
+### Step 7: Restart the Bot Service
+
+```bash
+# Start the service
+sudo systemctl start delta-bot
+
+# Check status to ensure it's running
+sudo systemctl status delta-bot
+
+# Monitor logs for any errors
+tail -f ~/uniswap-v3-delta-neutral-bot/bot.log
+```
+
+### Quick Update Command (One-liner)
+
+For experienced users, here's a streamlined update command:
+
+```bash
+cd ~/uniswap-v3-delta-neutral-bot && \
+sudo systemctl stop delta-bot && \
+cp .env .env.backup && \
+git pull origin main && \
+source venv/bin/activate && \
+pip install --upgrade -r requirements.txt && \
+sudo systemctl start delta-bot && \
+sudo systemctl status delta-bot
+```
+
+### Troubleshooting Updates
+
+**If the bot won't start after update:**
+
+```bash
+# Check service status and logs
+sudo systemctl status delta-bot
+journalctl -u delta-bot -n 50
+
+# Check Python errors directly
+cd ~/uniswap-v3-delta-neutral-bot
+source venv/bin/activate
+python -m bot.main config.local.json
+```
+
+**If configuration conflicts occur:**
+
+```bash
+# Review what changed in .env.example
+git diff HEAD~1 .env.example
+
+# Update your .env with new required variables
+nano .env
+```
+
+**If dependencies fail to install:**
+
+```bash
+# Recreate virtual environment
+cd ~/uniswap-v3-delta-neutral-bot
+rm -rf venv
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### Rollback to Previous Version
+
+If the update causes issues, you can rollback:
+
 ```bash
 # Stop the service
 sudo systemctl stop delta-bot
 
-# Activate virtual environment
-cd ~/uniswap-v3-delta-neutral-bot
-source venv/bin/activate
+# View recent commits to find the version you want
+git log --oneline -n 10
 
-# Backup current configuration
-cp .env .env.backup
-cp config.local.json config.local.json.backup
+# Rollback to a specific commit (replace COMMIT_HASH)
+git checkout COMMIT_HASH
 
-# Pull latest changes
+# Or rollback to previous commit
+git checkout HEAD~1
+
+# Restore configuration backup
+cp .env.backup.YYYYMMDD_HHMMSS .env
+
+# Restart service
+sudo systemctl start delta-bot
+```
+
+### Automated Update Script
+
+Create an automated update script for convenience:
+
+```bash
+cat > ~/update-bot.sh <<'EOF'
+#!/bin/bash
+
+echo "=== Updating Delta-Neutral Bot ==="
+
+# Configuration
+BOT_DIR="$HOME/uniswap-v3-delta-neutral-bot"
+BACKUP_DIR="$HOME/backups"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+# Create backup directory
+mkdir -p $BACKUP_DIR
+
+# Stop service
+echo "Stopping bot service..."
+sudo systemctl stop delta-bot
+
+# Backup configurations
+echo "Backing up configuration..."
+cp $BOT_DIR/.env $BACKUP_DIR/env_backup_$DATE
+cp $BOT_DIR/config.local.json $BACKUP_DIR/config_backup_$DATE 2>/dev/null || true
+
+# Pull updates
+echo "Pulling latest changes..."
+cd $BOT_DIR
 git pull origin main
 
-# Update dependencies if needed
+if [ $? -ne 0 ]; then
+    echo "ERROR: Git pull failed!"
+    echo "Restoring service..."
+    sudo systemctl start delta-bot
+    exit 1
+fi
+
+# Update dependencies
+echo "Updating dependencies..."
+source venv/bin/activate
 pip install --upgrade -r requirements.txt
 
-# Run tests
-python -m pytest tests/
+if [ $? -ne 0 ]; then
+    echo "ERROR: Dependency update failed!"
+    echo "Restoring service..."
+    sudo systemctl start delta-bot
+    exit 1
+fi
 
-# Restart the service
+# Restart service
+echo "Restarting bot service..."
 sudo systemctl start delta-bot
 
 # Check status
-sudo systemctl status delta-bot
+sleep 2
+if systemctl is-active --quiet delta-bot; then
+    echo "✓ Bot updated and running successfully!"
+    sudo systemctl status delta-bot
+else
+    echo "✗ Bot failed to start after update!"
+    echo "Check logs: journalctl -u delta-bot -n 50"
+    exit 1
+fi
+
+echo "Update completed at $(date)"
+EOF
+
+chmod +x ~/update-bot.sh
+
+echo "Update script created at ~/update-bot.sh"
+echo "Run it with: ~/update-bot.sh"
 ```
+
+### Best Practices for Updates
+
+1. **Always backup** your `.env` file before updating
+2. **Review the changelog** or commit messages to understand what changed
+3. **Test in development** environment first if possible
+4. **Monitor logs** closely after updating
+5. **Keep backups** for at least 7 days
+6. **Update during low activity** periods to minimize disruption
+7. **Have a rollback plan** ready before updating
 
 ## Troubleshooting
 

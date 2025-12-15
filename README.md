@@ -4,7 +4,9 @@ A sophisticated Python bot that implements delta-neutral hedging strategies for 
 
 ## Overview
 
-This bot monitors liquidity positions across Uniswap V3 and Aerodrome (via vfat.io sickle contracts), calculates delta exposure, and automatically executes hedging trades on Hyperliquid to maintain a delta-neutral portfolio. It includes comprehensive risk management features including impermanent loss tracking, fee analysis, and downside risk calculations.
+This bot monitors liquidity positions across Uniswap V3 and Aerodrome on **Base Chain** (via vfat.io sickle contracts), calculates delta exposure, and automatically executes hedging trades on Hyperliquid to maintain a delta-neutral portfolio. It includes comprehensive risk management features including impermanent loss tracking, fee analysis, and downside risk calculations.
+
+**Important:** This bot exclusively operates on **Base Chain**. ETH mainnet is not supported.
 
 ## Features
 
@@ -47,9 +49,9 @@ This bot monitors liquidity positions across Uniswap V3 and Aerodrome (via vfat.
 ### Prerequisites
 
 - Python 3.8 or higher
-- Ethereum node access (Infura, Alchemy, or local node)
+- Base Chain RPC access (Infura, Alchemy, or public endpoint)
 - Hyperliquid account and API credentials
-- Wallet with LP positions in Uniswap V3 or Aerodrome
+- Wallet with LP positions in Uniswap V3 or Aerodrome on Base Chain
 
 ### Quick Setup
 
@@ -122,7 +124,7 @@ WALLET_ADDRESS=0xYourTangemWalletAddress
 # Hyperliquid API wallet private key (SENSITIVE - never commit this!)
 HYPERLIQUID_PRIVATE_KEY=0xYourHyperliquidPrivateKey
 
-# RPC endpoint (for Base chain if using Aerodrome)
+# RPC endpoint for Base chain
 RPC_URL=https://base-mainnet.infura.io/v3/YOUR_INFURA_KEY
 
 # VFAT Sickle contract on Base chain
@@ -218,9 +220,9 @@ The bot integrates with vfat.io's sickle contracts to fetch position data:
 
 ### Uniswap V3
 
-Direct integration with Uniswap V3 NFT Position Manager:
+Direct integration with Uniswap V3 NFT Position Manager on Base Chain:
 
-- Contract: `0xC36442b4a4522E871399CD717aBDD847Ab11FE88` (Ethereum mainnet)
+- Contract: `0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1` (Base Chain)
 - Fetches positions via `positions()` function
 - Calculates amounts from liquidity and tick ranges
 
