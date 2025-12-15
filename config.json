@@ -7,11 +7,11 @@
   
   "descriptions": {
     "wallet_address": "Ethereum wallet address holding LP positions (env: WALLET_ADDRESS)",
-    "rpc_url": "Ethereum RPC endpoint URL (env: RPC_URL, RPC_URL_BASE, or RPC_URL_ETHEREUM)",
+    "rpc_url": "Base Chain RPC endpoint URL (env: RPC_URL) - Bot exclusively uses Base chain",
     "vfat_api_url": "vfat.io API endpoint for sickle contracts (env: VFAT_API_URL)",
-    "sickle_contract_address": "Address of the sickle contract (env: VFAT_SICKLE_ADDRESS)",
-    "uniswap_v3_nft_address": "Uniswap V3 NFT Position Manager contract address (env: UNISWAP_V3_NFT_ADDRESS or UNISWAP_V3_NFT_ADDRESS_BASE)",
-    "aerodrome_nft_address": "Aerodrome NFT Position Manager contract address (env: AERODROME_NFT_ADDRESS)",
+    "sickle_contract_address": "Address of the sickle contract on Base (env: VFAT_SICKLE_ADDRESS)",
+    "uniswap_v3_nft_address": "Uniswap V3 NFT Position Manager contract address on Base (env: UNISWAP_V3_NFT_ADDRESS)",
+    "aerodrome_nft_address": "Aerodrome NFT Position Manager contract address on Base (env: AERODROME_NFT_ADDRESS)",
     "hyperliquid_private_key": "Hyperliquid private key for authentication and signing (env: HYPERLIQUID_PRIVATE_KEY) - SENSITIVE",
     "hyperliquid_api_url": "Hyperliquid API URL (env: HYPERLIQUID_API_URL)",
     "hyperliquid_testnet": "Use Hyperliquid testnet (true) or mainnet (false) (env: HYPERLIQUID_TESTNET)",
