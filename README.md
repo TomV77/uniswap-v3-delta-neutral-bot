@@ -48,12 +48,43 @@ This bot monitors liquidity positions across Uniswap V3 and Aerodrome on **Base 
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.8 or higher (for manual installation) OR Docker (recommended for production)
 - Base Chain RPC access (Infura, Alchemy, or public endpoint)
 - Hyperliquid account and API credentials
 - Wallet with LP positions in Uniswap V3 or Aerodrome on Base Chain
 
-### Quick Setup
+### Deployment Options
+
+#### Option 1: Docker Deployment (Recommended)
+
+**Docker provides better isolation and eliminates configuration issues.**
+
+For detailed Docker deployment instructions, see [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md).
+
+**Quick Docker Setup:**
+```bash
+# Clone the repository
+git clone https://github.com/TomV77/uniswap-v3-delta-neutral-bot.git
+cd uniswap-v3-delta-neutral-bot
+
+# Configure environment
+cp .env.example .env
+nano .env  # Fill in your credentials
+
+# Create logs directory
+mkdir -p logs
+
+# Build and start with Docker Compose
+docker compose build
+docker compose up -d
+
+# View logs
+docker compose logs -f
+```
+
+See [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) for comprehensive Docker deployment guide, including AWS deployment, monitoring, and troubleshooting.
+
+#### Option 2: Manual Python Installation
 
 1. Clone the repository:
 ```bash
@@ -83,23 +114,27 @@ cp config.json config.json.local
 
 ### AWS Deployment
 
-For detailed instructions on deploying to AWS t3.small instance, see [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md).
+**Recommended: Use Docker on AWS for better reliability and easier management.**
 
-**Quick AWS Setup:**
+For Docker deployment on AWS, see [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md).
+
+For traditional systemd deployment on AWS t3.small instance, see [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md).
+
+**Quick AWS Setup with Docker:**
 ```bash
 # On AWS t3.small Ubuntu instance
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y python3 python3-venv git
+sudo apt install -y docker.io docker-compose git
 git clone https://github.com/TomV77/uniswap-v3-delta-neutral-bot.git
 cd uniswap-v3-delta-neutral-bot
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
 cp .env.example .env
-# Edit .env with your settings
+nano .env  # Configure your settings
+mkdir -p logs
+docker compose build
+docker compose up -d
 ```
 
-See [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md) for systemd service setup, monitoring, and production best practices.
+See [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) for complete Docker deployment guide and [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md) for systemd service setup.
 
 ## Configuration
 
