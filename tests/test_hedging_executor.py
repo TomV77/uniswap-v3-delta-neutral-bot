@@ -26,7 +26,7 @@ class TestHedgingExecutor(unittest.TestCase):
             'hyperliquid_api_secret': 'test_secret',
             'hyperliquid_api_url': 'https://api.hyperliquid.xyz',
             'hyperliquid_testnet': True,
-            'wallet_address': '0xTestWallet',
+            'wallet_address': '0x2D4de18344D54111d5327AE9F81e0c60D44AEd40',
             'max_position_size': 10.0,
             'min_order_size': 0.01,
             'slippage_tolerance': 0.005,
@@ -38,6 +38,7 @@ class TestHedgingExecutor(unittest.TestCase):
         """Test HedgingExecutor initialization"""
         self.assertEqual(self.executor.api_key, 'test_key')
         self.assertEqual(self.executor.api_secret, 'test_secret')
+        self.assertEqual(self.executor.wallet_address, '0x2D4de18344D54111d5327AE9F81e0c60D44AEd40')
         self.assertEqual(self.executor.max_position_size, Decimal('10.0'))
         self.assertEqual(self.executor.min_order_size, Decimal('0.01'))
     

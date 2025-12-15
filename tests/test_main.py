@@ -25,7 +25,8 @@ class TestDeltaNeutralBot(unittest.TestCase):
         # Create a temporary config file
         self.temp_config = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
         config_data = {
-            'wallet_address': '0xTestWallet',
+            'wallet_address': '0x2D4de18344D54111d5327AE9F81e0c60D44AEd40',
+            'vfat_sickle_wallet_address': '0xa1b402db32ccaeef1e18a52ee1f50aeaa5535d9b',
             'rpc_url': 'https://test.rpc',
             'update_interval_seconds': 1,
             'hedge_symbol': 'ETH-USD',
@@ -50,13 +51,15 @@ class TestDeltaNeutralBot(unittest.TestCase):
         self.assertIsNotNone(self.bot.position_reader)
         self.assertIsNotNone(self.bot.hedging_executor)
         self.assertIsNotNone(self.bot.risk_manager)
-        self.assertEqual(self.bot.wallet_address, '0xTestWallet')
+        self.assertEqual(self.bot.wallet_address, '0x2D4de18344D54111d5327AE9F81e0c60D44AEd40')
+        self.assertEqual(self.bot.vfat_sickle_wallet_address, '0xa1b402db32ccaeef1e18a52ee1f50aeaa5535d9b')
         self.assertEqual(self.bot.update_interval, 1)
     
     def test_load_config_valid(self):
         """Test loading valid config"""
         config = self.bot.config
-        self.assertEqual(config['wallet_address'], '0xTestWallet')
+        self.assertEqual(config['wallet_address'], '0x2D4de18344D54111d5327AE9F81e0c60D44AEd40')
+        self.assertEqual(config['vfat_sickle_wallet_address'], '0xa1b402db32ccaeef1e18a52ee1f50aeaa5535d9b')
         self.assertEqual(config['hedge_symbol'], 'ETH-USD')
     
     def test_load_config_missing_file(self):
@@ -72,6 +75,7 @@ class TestDeltaNeutralBot(unittest.TestCase):
         config = get_default_config()
         
         self.assertIn('wallet_address', config)
+        self.assertIn('vfat_sickle_wallet_address', config)
         self.assertIn('delta_threshold', config)
         self.assertIn('hedge_symbol', config)
         self.assertIn('update_interval_seconds', config)
@@ -314,7 +318,8 @@ class TestDeltaNeutralBotEdgeCases(unittest.TestCase):
         # Create a temporary config file
         self.temp_config = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
         config_data = {
-            'wallet_address': '0xTestWallet',
+            'wallet_address': '0x2D4de18344D54111d5327AE9F81e0c60D44AEd40',
+            'vfat_sickle_wallet_address': '0xa1b402db32ccaeef1e18a52ee1f50aeaa5535d9b',
             'rpc_url': 'https://test.rpc',
             'update_interval_seconds': 1,
             'hedge_symbol': 'ETH-USD',
