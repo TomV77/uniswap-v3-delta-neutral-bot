@@ -195,6 +195,86 @@ class TestPositionReader(unittest.TestCase):
         self.assertEqual(delta, Decimal('0'))
 
 
+class TestPositionReaderErrorHandling(unittest.TestCase):
+    """Test error handling in PositionReader"""
+    
+    def setUp(self):
+        """Set up test fixtures"""
+        self.config = {
+            'rpc_url': 'https://mainnet.infura.io/v3/test',
+            'vfat_api_url': 'https://api.vfat.io',
+            'uniswap_v3_nft_address': '0xC36442b4a4522E871399CD717aBDD847Ab11FE88',
+            'aerodrome_nft_address': '0x1234567890123456789012345678901234567890',
+        }
+        self.reader = PositionReader(self.config)
+    
+    @pytest.mark.asyncio
+    async def test_fetch_uniswap_positions_invalid_address(self):
+        """Test handling of invalid wallet address in Uniswap positions"""
+        # Invalid address format
+        positions = await self.reader._fetch_uniswap_positions('invalid-address')
+        self.assertEqual(len(positions), 0)
+    
+    @pytest.mark.asyncio
+    async def test_fetch_aerodrome_positions_invalid_address(self):
+        """Test handling of invalid wallet address in Aerodrome positions"""
+        # Invalid address format
+        positions = await self.reader._fetch_aerodrome_positions('not-an-address')
+        self.assertEqual(len(positions), 0)
+    
+    @pytest.mark.asyncio
+    @patch('bot.position_reader.aiohttp.ClientSession')
+    async def test_fetch_sickle_positions_404(self, mock_session):
+        """Test handling of 404 response from VFAT API"""
+        mock_response = AsyncMock()
+        mock_response.status = 404
+        
+        mock_session.return_value.__aenter__.return_value.get.return_value.__aenter__.return_value = mock_response
+        
+        positions = await self.reader._fetch_sickle_positions('0x1234567890123456789012345678901234567890')
+        
+        # Should handle gracefully and return empty list
+        self.assertEqual(len(positions), 0)
+    
+    @pytest.mark.asyncio
+    @patch('bot.position_reader.aiohttp.ClientSession')
+    async def test_fetch_sickle_positions_timeout(self, mock_session):
+        """Test handling of timeout from VFAT API"""
+        mock_get = AsyncMock()
+        mock_get.side_effect = asyncio.TimeoutError("Request timed out")
+        
+        mock_session.return_value.__aenter__.return_value.get = mock_get
+        
+        positions = await self.reader._fetch_sickle_positions('0x1234567890123456789012345678901234567890')
+        
+        # Should handle gracefully and return empty list
+        self.assertEqual(len(positions), 0)
+    
+    def test_get_uniswap_nft_contract_invalid_address(self):
+        """Test contract creation with invalid address"""
+        reader_config = {
+            'rpc_url': 'https://mainnet.infura.io/v3/test',
+            'uniswap_v3_nft_address': 'invalid-address',
+        }
+        reader = PositionReader(reader_config)
+        contract = reader._get_uniswap_nft_contract()
+        
+        # Should return None for invalid address
+        self.assertIsNone(contract)
+    
+    def test_get_aerodrome_nft_contract_invalid_address(self):
+        """Test contract creation with invalid Aerodrome address"""
+        reader_config = {
+            'rpc_url': 'https://mainnet.infura.io/v3/test',
+            'aerodrome_nft_address': 'not-a-valid-address',
+        }
+        reader = PositionReader(reader_config)
+        contract = reader._get_aerodrome_nft_contract()
+        
+        # Should return None for invalid address
+        self.assertIsNone(contract)
+
+
 class TestPosition(unittest.TestCase):
     """Test cases for Position dataclass"""
     

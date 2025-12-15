@@ -105,25 +105,49 @@ class PositionReader:
             logger.warning("Uniswap V3 NFT contract not configured")
             return positions
         
+        # Validate and checksum wallet address
+        try:
+            wallet_address = self.w3.to_checksum_address(wallet_address)
+        except Exception as e:
+            logger.error(f"Invalid wallet address format: {wallet_address}, error: {e}")
+            return positions
+        
         try:
             # Get positions from Uniswap V3 NFT contract
             # This is a simplified version - real implementation would use the actual contract ABI
             nft_contract = self._get_uniswap_nft_contract()
             
             if nft_contract:
+                logger.info(f"Fetching Uniswap V3 positions for wallet: {wallet_address}")
+                
                 # Get token IDs owned by wallet
-                balance = nft_contract.functions.balanceOf(wallet_address).call()
+                try:
+                    balance = nft_contract.functions.balanceOf(wallet_address).call()
+                    logger.info(f"Found {balance} Uniswap V3 NFT positions")
+                except Exception as e:
+                    logger.error(f"Error calling balanceOf for address {wallet_address}: {e}")
+                    logger.error(f"Contract address: {self.uniswap_v3_nft_address}")
+                    logger.error(f"RPC URL: {self.rpc_url}")
+                    return positions
                 
                 for i in range(balance):
-                    token_id = nft_contract.functions.tokenOfOwnerByIndex(wallet_address, i).call()
-                    position_data = nft_contract.functions.positions(token_id).call()
-                    
-                    # Parse position data
-                    position = self._parse_uniswap_position(token_id, position_data)
-                    if position:
-                        positions.append(position)
+                    token_id = None  # Initialize to avoid NameError in exception handling
+                    try:
+                        token_id = nft_contract.functions.tokenOfOwnerByIndex(wallet_address, i).call()
+                        logger.debug(f"Processing NFT token ID: {token_id}")
+                        
+                        position_data = nft_contract.functions.positions(token_id).call()
+                        
+                        # Parse position data
+                        position = self._parse_uniswap_position(token_id, position_data)
+                        if position:
+                            positions.append(position)
+                            logger.info(f"Successfully parsed position {token_id}")
+                    except Exception as e:
+                        logger.error(f"Error processing Uniswap position {i} (token {token_id if token_id else 'unknown'}): {e}")
+                        continue
         except Exception as e:
-            logger.error(f"Error in _fetch_uniswap_positions: {e}")
+            logger.error(f"Error in _fetch_uniswap_positions: {e}", exc_info=True)
         
         return positions
     
@@ -135,56 +159,145 @@ class PositionReader:
             logger.warning("Aerodrome NFT contract not configured")
             return positions
         
+        # Validate and checksum wallet address
+        try:
+            wallet_address = self.w3.to_checksum_address(wallet_address)
+        except Exception as e:
+            logger.error(f"Invalid wallet address format: {wallet_address}, error: {e}")
+            return positions
+        
         try:
             # Get positions from Aerodrome NFT contract
             # This is a simplified version - real implementation would use the actual contract ABI
             nft_contract = self._get_aerodrome_nft_contract()
             
             if nft_contract:
+                logger.info(f"Fetching Aerodrome positions for wallet: {wallet_address}")
+                
                 # Similar to Uniswap, get positions owned by wallet
-                balance = nft_contract.functions.balanceOf(wallet_address).call()
+                try:
+                    balance = nft_contract.functions.balanceOf(wallet_address).call()
+                    logger.info(f"Found {balance} Aerodrome NFT positions")
+                except Exception as e:
+                    logger.error(f"Error calling balanceOf for address {wallet_address}: {e}")
+                    logger.error(f"Contract address: {self.aerodrome_nft_address}")
+                    return positions
                 
                 for i in range(balance):
-                    token_id = nft_contract.functions.tokenOfOwnerByIndex(wallet_address, i).call()
-                    position_data = nft_contract.functions.positions(token_id).call()
-                    
-                    # Parse position data
-                    position = self._parse_aerodrome_position(token_id, position_data)
-                    if position:
-                        positions.append(position)
+                    token_id = None  # Initialize to avoid NameError in exception handling
+                    try:
+                        token_id = nft_contract.functions.tokenOfOwnerByIndex(wallet_address, i).call()
+                        logger.debug(f"Processing Aerodrome NFT token ID: {token_id}")
+                        
+                        position_data = nft_contract.functions.positions(token_id).call()
+                        
+                        # Parse position data
+                        position = self._parse_aerodrome_position(token_id, position_data)
+                        if position:
+                            positions.append(position)
+                            logger.info(f"Successfully parsed Aerodrome position {token_id}")
+                    except Exception as e:
+                        logger.error(f"Error processing Aerodrome position {i} (token {token_id if token_id else 'unknown'}): {e}")
+                        continue
         except Exception as e:
-            logger.error(f"Error in _fetch_aerodrome_positions: {e}")
+            logger.error(f"Error in _fetch_aerodrome_positions: {e}", exc_info=True)
         
         return positions
     
     async def _fetch_sickle_positions(self, wallet_address: str) -> List[Position]:
-        """Fetch positions via vfat.io sickle contracts"""
+        """
+        Fetch positions via vfat.io sickle contracts.
+        
+        Note: VFAT.io does not provide a public REST API for position data.
+        This method attempts to query the sickle contract directly via Web3
+        or uses the VFAT API if available.
+        """
         positions = []
         
+        # Validate wallet address
+        if self.w3:
+            try:
+                wallet_address = self.w3.to_checksum_address(wallet_address)
+            except Exception as e:
+                logger.error(f"Invalid wallet address format: {wallet_address}, error: {e}")
+                return positions
+        
         try:
+            # Try API first (if endpoint exists)
             async with aiohttp.ClientSession() as session:
                 # Query vfat.io API for sickle contract positions
+                # Note: This endpoint may not exist - VFAT.io primarily provides web UI, not public API
                 url = f"{self.vfat_api_url}/positions/{wallet_address}"
                 
-                async with session.get(url) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        
-                        # Parse sickle positions
-                        for pos_data in data.get('positions', []):
-                            position = self._parse_sickle_position(pos_data)
-                            if position:
-                                positions.append(position)
-                    else:
-                        logger.warning(f"vfat.io API returned status {response.status}")
+                logger.debug(f"Attempting to fetch sickle positions from: {url}")
+                
+                try:
+                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            
+                            # Parse sickle positions
+                            for pos_data in data.get('positions', []):
+                                position = self._parse_sickle_position(pos_data)
+                                if position:
+                                    positions.append(position)
+                            
+                            logger.info(f"Fetched {len(positions)} positions from VFAT API")
+                        elif response.status == 404:
+                            logger.warning(f"VFAT API endpoint not found (404): {url}")
+                            logger.info("VFAT.io may not provide a public REST API. Consider fetching positions directly from sickle contracts via Web3.")
+                        else:
+                            logger.warning(f"VFAT API returned status {response.status} for {url}")
+                except asyncio.TimeoutError:
+                    logger.warning(f"VFAT API request timed out: {url}")
+                except aiohttp.ClientError as e:
+                    logger.warning(f"VFAT API request failed: {e}")
+                    
         except Exception as e:
-            logger.error(f"Error in _fetch_sickle_positions: {e}")
+            logger.error(f"Error in _fetch_sickle_positions: {e}", exc_info=True)
+        
+        # If no positions found via API and we have sickle contract, try direct contract interaction
+        if not positions and self.sickle_contract_address and self.w3:
+            logger.info("Attempting to fetch positions directly from sickle contract")
+            positions = await self._fetch_sickle_positions_from_contract(wallet_address)
+        
+        return positions
+    
+    async def _fetch_sickle_positions_from_contract(self, wallet_address: str) -> List[Position]:
+        """
+        Fetch positions directly from sickle contract via Web3.
+        
+        TODO: Implement direct sickle contract interaction.
+        Required information:
+        - Sickle contract ABI (needs to be obtained from contract deployment or Etherscan)
+        - Contract methods for querying positions (likely: getUserPositions(), getPosition(), etc.)
+        - Position data structure returned by the contract
+        - Reference: https://vfat.io or sickle contract documentation
+        """
+        positions = []
+        
+        if not self.w3 or not self.sickle_contract_address:
+            return positions
+        
+        try:
+            logger.info("Direct sickle contract querying not yet implemented")
+            logger.info(f"Sickle contract address: {self.sickle_contract_address}")
+            logger.info("To implement: obtain sickle contract ABI and implement position fetching logic")
+        except Exception as e:
+            logger.error(f"Error fetching from sickle contract: {e}", exc_info=True)
         
         return positions
     
     def _get_uniswap_nft_contract(self) -> Optional[Contract]:
         """Get Uniswap V3 NFT Position Manager contract"""
         if not self.w3 or not self.uniswap_v3_nft_address:
+            return None
+        
+        try:
+            # Ensure address is checksummed
+            contract_address = self.w3.to_checksum_address(self.uniswap_v3_nft_address)
+        except Exception as e:
+            logger.error(f"Invalid Uniswap V3 NFT contract address: {self.uniswap_v3_nft_address}, error: {e}")
             return None
         
         # Minimal ABI for position reading
@@ -228,11 +341,22 @@ class PositionReader:
             }
         ]
         
-        return self.w3.eth.contract(address=self.uniswap_v3_nft_address, abi=abi)
+        try:
+            return self.w3.eth.contract(address=contract_address, abi=abi)
+        except Exception as e:
+            logger.error(f"Error creating Uniswap V3 NFT contract instance: {e}")
+            return None
     
     def _get_aerodrome_nft_contract(self) -> Optional[Contract]:
         """Get Aerodrome NFT Position Manager contract"""
         if not self.w3 or not self.aerodrome_nft_address:
+            return None
+        
+        try:
+            # Ensure address is checksummed
+            contract_address = self.w3.to_checksum_address(self.aerodrome_nft_address)
+        except Exception as e:
+            logger.error(f"Invalid Aerodrome NFT contract address: {self.aerodrome_nft_address}, error: {e}")
             return None
         
         # Similar ABI to Uniswap V3
@@ -276,7 +400,11 @@ class PositionReader:
             }
         ]
         
-        return self.w3.eth.contract(address=self.aerodrome_nft_address, abi=abi)
+        try:
+            return self.w3.eth.contract(address=contract_address, abi=abi)
+        except Exception as e:
+            logger.error(f"Error creating Aerodrome NFT contract instance: {e}")
+            return None
     
     def _parse_uniswap_position(self, token_id: int, position_data: tuple) -> Optional[Position]:
         """Parse Uniswap V3 position data"""

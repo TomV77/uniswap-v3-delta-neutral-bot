@@ -62,6 +62,7 @@ Thumbs.db
 .coverage
 htmlcov/
 .tox/
+test_position_detection.py
 
 # Temporary files
 *.tmp
