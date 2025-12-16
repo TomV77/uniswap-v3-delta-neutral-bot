@@ -1,18 +1,18 @@
 const { Web3 } = require('web3');
 
-// Connect to Base mainnet (replace with your own Infura/Alchemy key if desired)
+// Connect to Base mainnet
 const web3 = new Web3('https://base-mainnet.infura.io/v3/c0660434a7f448b0a99f1b5d049e95e6');
 
-// Your personal Sickle contract address on Base
+// Your Sickle address
 const sickleAddress = '0xa1B402db32CCAEEF1E18A52eE1F50aeaa5535d9B';
 
 // Uniswap V3 NonfungiblePositionManager on Base
 const POSITIONS_MANAGER = '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1';
 
-// Your position Token ID from VFAT.io
+// Your position Token ID
 const TOKEN_ID = 4292587;
 
-// ABI for NonfungiblePositionManager – includes balanceOf (for confirmation) and positions() (full details)
+// ABI with balanceOf and positions()
 const positionsAbi = [
     {
         "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
@@ -45,37 +45,41 @@ const positionsAbi = [
 
 const positionsContract = new web3.eth.Contract(positionsAbi, POSITIONS_MANAGER);
 
-// Test connection and fetch everything
+// Helper to format amounts
+function formatAmount(amountBigInt, decimals) {
+    return Number(amountBigInt) / (10 ** decimals);
+}
+
 (async () => {
     try {
-        // 1. Confirm connection
+        // Confirm connection and block
         const blockNumber = await web3.eth.getBlockNumber();
         console.log('Current Block Number:', blockNumber.toString());
         console.log('');
 
-        // 2. Confirm how many positions your Sickle owns
+        // Confirm position count
         const balance = await positionsContract.methods.balanceOf(sickleAddress).call();
         console.log(`Your Sickle (${sickleAddress}) owns ${balance} Uniswap V3 position(s)`);
         console.log('');
 
-        // 3. Fetch full details for your known position
+        // Fetch position details
         console.log(`Fetching details for Token ID #${TOKEN_ID}...`);
         const pos = await positionsContract.methods.positions(TOKEN_ID).call();
 
         // Human-readable output
         console.log('=== Position Details ===');
-        console.log('Token0 (usually lower address, e.g., WETH):', pos.token0);
-        console.log('Token1 (usually higher address, e.g., USDC):', pos.token1);
-        console.log('Fee Tier:', (pos.fee / 10000).toFixed(2) + '%'); // e.g., 3000 → 0.30%
-        console.log('Tick Lower:', pos.tickLower);
-        console.log('Tick Upper:', pos.tickUpper);
+        console.log('Token0: WETH @', pos.token0);
+        console.log('Token1: USDC @', pos.token1);
+        console.log('Fee Tier:', Number(pos.fee) / 10000 + '%');  // Fixed BigInt division
+        console.log('Tick Lower:', pos.tickLower.toString());
+        console.log('Tick Upper:', pos.tickUpper.toString());
         console.log('Liquidity:', pos.liquidity.toString());
-        console.log('Uncollected Fees (Token0):', web3.utils.fromWei(pos.tokensOwed0, 'ether')); // Adjust units if needed
-        console.log('Uncollected Fees (Token1):', pos.tokensOwed1.toString()); // USDC is 6 decimals usually
+        console.log('Uncollected Fees (WETH):', formatAmount(pos.tokensOwed0, 18).toFixed(6));
+        console.log('Uncollected Fees (USDC):', formatAmount(pos.tokensOwed1, 6).toFixed(2));
         console.log('');
 
-        console.log('Success! Your delta-neutral position data is above.');
-        console.log('You can now build monitoring, fee harvesting alerts, or rebalancing logic on top of this.');
+        console.log('Success! This matches your VFAT.io CL-60 WETH/USDC 0.3% position.');
+        console.log('You can now monitor fees, check in-range status, or build harvesting logic.');
 
     } catch (error) {
         console.error('Error:', error.message || error);
