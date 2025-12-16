@@ -1,83 +1,55 @@
 const { Web3 } = require('web3');
 const web3 = new Web3('https://base-mainnet.infura.io/v3/c0660434a7f448b0a99f1b5d049e95e6');
 
-// Test the connection
+// Test connection
 (async () => {
     try {
         const blockNumber = await web3.eth.getBlockNumber();
         console.log('Current Block Number:', blockNumber);
     } catch (error) {
-        console.error('Error connecting to the Web3 provider:', error);
+        console.error('Error connecting:', error);
     }
 })();
 
-// Sickle contract ABI (provided by you)
-const sickleAbi = [
-    {"inputs":[{"internalType":"address","name":"sickleRegistry_","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},
-    {"inputs":[{"internalType":"address","name":"caller","type":"address"}],"name":"CallerNotWhitelisted","type":"error"},
-    {"inputs":[],"name":"MulticallParamsMismatchError","type":"error"},
-    {"inputs":[],"name":"NotOwnerError","type":"error"},
-    {"inputs":[],"name":"NotStrategyError","type":"error"},
-    {"inputs":[{"internalType":"address","name":"target","type":"address"}],"name":"TargetNotWhitelisted","type":"error"},
-    {"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint8","name":"version","type":"uint8"}],"name":"Initialized","type":"event"},
-    {"inputs":[],"name":"approved","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-    {"inputs":[{"internalType":"address","name":"sickleOwner_","type":"address"},{"internalType":"address","name":"approved_","type":"address"}],"name":"initialize","outputs":[],"stateMutability":"nonpayable"},
-    {"inputs":[{"internalType":"address","name":"caller","type":"address"}],"name":"isOwnerOrApproved","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view"},
-    {"inputs":[{"internalType":"address[]","name":"targets","type":"address[]"},{"internalType":"bytes[]","name":"data","type":"bytes[]"}],"name":"multicall","outputs":[],"stateMutability":"payable"},
-    {"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"},{"internalType":"uint256[]","name":"","type":"uint256[]"},{"internalType":"uint256[]","name":"","type":"uint256[]"},{"internalType":"bytes","name":"","type":"bytes"}],"name":"onERC1155BatchReceived","outputs":[{"internalType":"bytes4","name":"","type":"bytes4"}],"stateMutability":"pure"},
-    {"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"bytes","name":"","type":"bytes"}],"name":"onERC1155Received","outputs":[{"internalType":"bytes4","name":"","type":"bytes4"}],"stateMutability":"pure"},
-    {"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"bytes","name":"","type":"bytes"}],"name":"onERC721Received","outputs":[{"internalType":"bytes4","name":"","type":"bytes4"}],"stateMutability":"pure"},
-    {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view"},
-    {"inputs":[],"name":"registry","outputs":[{"internalType":"contract SickleRegistry","name":"","type":"address"}],"stateMutability":"view"},
-    {"inputs":[{"internalType":"address","name":"newApproved","type":"address"}],"name":"setApproved","outputs":[],"stateMutability":"nonpayable"},
-    {"stateMutability":"payable","type":"receive"}
+// Your personal Sickle address on Base
+const sickleAddress = '0xa1B402db32CCAEEF1E18A52eE1F50aeaa5535d9B';
+
+// Uniswap V3 Positions NFT manager on Base
+const UNISWAP_V3_NFT_ADDRESS_BASE = '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1';
+
+// Minimal ABI for NonfungiblePositionManager (only what we need: balanceOf and tokenOfOwnerByIndex)
+const positionsAbi = [
+    {"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"index","type":"uint256"}],"name":"tokenOfOwnerByIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
 ];
 
-// Sickle contract address
-const sickleAddress = '0xa1b402db32ccaeef1e18a52ee1f50aeaa5535d9b';
+const positionsContract = new web3.eth.Contract(positionsAbi, UNISWAP_V3_NFT_ADDRESS_BASE);
 
-// Initialize the contract
-const sickleContract = new web3.eth.Contract(sickleAbi, sickleAddress);
-
-// Function to fetch the registry contract address
-async function getRegistryAddress() {
+// Function to fetch all Uniswap V3 position token IDs owned by your Sickle
+async function fetchPositionTokenIds(sickleAddr) {
     try {
-        const registryAddress = await sickleContract.methods.registry().call();
-        console.log('Registry Address:', registryAddress);
-        return registryAddress;
+        const balance = await positionsContract.methods.balanceOf(sickleAddr).call();
+        console.log(`Your Sickle owns ${balance} Uniswap V3 position(s)`);
+
+        const tokenIds = [];
+        for (let i = 0; i < balance; i++) {
+            const tokenId = await positionsContract.methods.tokenOfOwnerByIndex(sickleAddr, i).call();
+            tokenIds.push(tokenId);
+            console.log(`Position Token ID #${i}: ${tokenId}`);
+        }
+        return tokenIds;
     } catch (error) {
-        console.error('Error fetching registry address:', error);
+        console.error('Error fetching positions:', error);
         throw error;
     }
 }
 
-// Example function to fetch position information
-async function fetchPosition(address) {
-    try {
-        const registryAddress = await getRegistryAddress();
-        console.log(`Using registry contract at: ${registryAddress}`);
-
-        // Add the SickleRegistry ABI here
-        const registryAbi = [ /* Add SickleRegistry ABI when available */ ];
-        const registryContract = new web3.eth.Contract(registryAbi, registryAddress);
-
-        // Assuming position-related function exists in Registry (e.g., balanceOf)
-        const balance = await registryContract.methods.balanceOf(address).call();
-        console.log(`Balance for ${address}: ${balance}`);
-        return balance;
-    } catch (error) {
-        console.error('Error fetching position:', error);
-        throw error;
-    }
-}
-
-// Test the workflow
+// Test it
 (async () => {
-    const walletAddress = '0xYourWalletAddressHere';
     try {
-        const position = await fetchPosition(walletAddress);
-        console.log('Position fetched successfully:', position);
+        const tokenIds = await fetchPositionTokenIds(sickleAddress);
+        console.log('All position token IDs:', tokenIds);
     } catch (error) {
-        console.error('Failed to fetch position:', error);
+        console.error('Failed:', error);
     }
 })();
