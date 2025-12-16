@@ -1,7 +1,17 @@
 const Web3 = require('web3');
 
-// Initialize Web3 with your Infura API key for Base Mainnet
+// Initialize Web3 using Infura’s Base Mainnet endpoint
 const web3 = new Web3('https://base-mainnet.infura.io/v3/c0660434a7f448b0a99f1b5d049e95e6');
+
+// Test the connection
+(async () => {
+    try {
+        const blockNumber = await web3.eth.getBlockNumber();
+        console.log('Current Block Number:', blockNumber);
+    } catch (error) {
+        console.error('Error connecting to the Web3 provider:', error);
+    }
+})();
 
 // Sickle contract ABI (provided by you)
 const sickleAbi = [
