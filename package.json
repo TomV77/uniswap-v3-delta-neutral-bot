@@ -5,18 +5,26 @@
   "main": "sickle.js",
   "scripts": {
     "test": "node sickle.js",
-    "sickle": "node sickle.js"
+    "sickle": "node sickle.js",
+    "sickle:test": "node sickle.js"
   },
   "keywords": [
     "uniswap",
     "v3",
     "sickle",
     "web3",
-    "base"
+    "base",
+    "delta-neutral",
+    "liquidity"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "dotenv": "^16.6.1",
     "web3": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
   }
 }

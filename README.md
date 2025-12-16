@@ -386,12 +386,50 @@ To add custom risk calculations:
 
 ## Troubleshooting
 
+### Sickle Contract Connection Issues
+
+For comprehensive troubleshooting of contract call errors, Web3 connection issues, and position fetching problems, see:
+
+**📘 [TROUBLESHOOTING_SICKLE.md](TROUBLESHOOTING_SICKLE.md)** - Complete troubleshooting guide covering:
+- "Could not decode contract function call to balanceOf" errors
+- "Could not transact with/call contract function" errors
+- Web3 connection and RPC endpoint issues
+- Contract deployment verification
+- Step-by-step diagnostic procedures
+- Testing tools and scripts
+
+### Quick Diagnostics
+
+**Test Python implementation:**
+```bash
+python test_sickle_connection.py
+```
+
+**Test Node.js implementation:**
+```bash
+npm run sickle
+```
+
+Both scripts verify:
+- RPC endpoint connectivity
+- Contract deployment
+- balanceOf and positions function calls
+- Chain sync status
+
 ### Common Issues
 
 **Bot not finding positions**
-- Verify wallet address in config
-- Check RPC URL is accessible
-- Ensure contracts are deployed on correct network
+- Verify `VFAT_SICKLE_ADDRESS` in `.env` (this is your LP position wallet, not Hyperliquid trading wallet)
+- Check RPC URL is accessible and synced
+- Ensure contracts are deployed on Base Chain (chain ID 8453)
+- Run `python test_sickle_connection.py` to diagnose
+- See [TROUBLESHOOTING_SICKLE.md](TROUBLESHOOTING_SICKLE.md) for detailed steps
+
+**Contract call errors**
+- See [TROUBLESHOOTING_SICKLE.md](TROUBLESHOOTING_SICKLE.md) for comprehensive error diagnosis
+- Verify contract addresses are correct for Base Chain
+- Check that RPC endpoint is not rate-limited
+- Increase retry settings: `MAX_RPC_RETRIES=5` in `.env`
 
 **Hedge execution failing**
 - Verify Hyperliquid API credentials
@@ -452,6 +490,25 @@ To add custom risk calculations:
 - [ ] Telegram/Discord alerts
 - [ ] Backtesting framework
 - [ ] Portfolio optimization
+
+## Documentation
+
+### Main Documentation
+- **README.md** (this file) - Complete bot overview and setup instructions
+- **[SICKLE_JS_README.md](SICKLE_JS_README.md)** - Node.js sickle.js utility documentation
+- **[TROUBLESHOOTING_SICKLE.md](TROUBLESHOOTING_SICKLE.md)** - Comprehensive troubleshooting guide for contract connection issues
+- **[DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md)** - Docker deployment guide
+- **[AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md)** - AWS deployment instructions
+
+### Testing Tools
+- **test_sickle_connection.py** - Python script to test Web3 connection and contract calls
+- **sickle.js** - Node.js script to verify Uniswap V3 position queries
+- **tests/** - Unit test suite for all bot components
+
+### Configuration Files
+- **.env.example** - Template for environment variables (copy to .env)
+- **config.json** - Configuration documentation (non-sensitive)
+- **package.json** - Node.js dependencies for sickle.js
 
 ## Contributing
 

@@ -85,7 +85,33 @@ You can now monitor fees, check in-range status, or build harvesting logic.
 
 ## Integration with Python Bot
 
-This script demonstrates the logic for querying Uniswap V3 positions that can be integrated into the main Python bot. The `bot/position_reader.py` module can use similar contract interaction patterns.
+This script demonstrates the logic for querying Uniswap V3 positions that can be integrated into the main Python bot. The `bot/position_reader.py` module uses similar contract interaction patterns.
+
+### Python Test Script
+
+A Python equivalent of `sickle.js` is available for troubleshooting:
+
+**File:** `test_sickle_connection.py`
+
+**Usage:**
+```bash
+python test_sickle_connection.py
+```
+
+**Features:**
+- Tests Web3 connection to Base Chain
+- Verifies contract deployment
+- Tests balanceOf and positions calls
+- Provides detailed error diagnostics
+- Mirrors sickle.js functionality for comparison
+
+**Use Cases:**
+- Debugging contract call issues
+- Verifying RPC endpoint connectivity
+- Comparing behavior between Node.js and Python implementations
+- Troubleshooting "Could not decode contract function call" errors
+
+See [TROUBLESHOOTING_SICKLE.md](TROUBLESHOOTING_SICKLE.md) for complete troubleshooting guide.
 
 ## Technical Details
 
@@ -137,6 +163,7 @@ Error: request to https://base-mainnet.infura.io/v3/... failed
 - Check internet connectivity
 - Verify Infura API key is valid
 - Ensure Base Chain is supported by your Infura plan
+- Try alternative RPC endpoints (see [TROUBLESHOOTING_SICKLE.md](TROUBLESHOOTING_SICKLE.md))
 
 ### Invalid Position
 ```
@@ -145,6 +172,28 @@ Error: execution reverted
 - Verify the Token ID exists
 - Confirm the token is owned by the specified sickle address
 - Check if the position has been closed/burned
+
+### Contract Call Errors
+```
+Could not decode contract function call to balanceOf
+```
+- Ensure contract is deployed at the address
+- Verify you're connected to Base Chain (chain ID 8453)
+- Check RPC endpoint is synced
+- See comprehensive troubleshooting guide: [TROUBLESHOOTING_SICKLE.md](TROUBLESHOOTING_SICKLE.md)
+
+### Testing Connection
+Use the Python test script to diagnose issues:
+```bash
+python test_sickle_connection.py
+```
+
+This will verify:
+- Web3 connection
+- Contract deployment
+- Function calls (balanceOf, positions)
+
+For detailed troubleshooting steps, see [TROUBLESHOOTING_SICKLE.md](TROUBLESHOOTING_SICKLE.md).
 
 ## License
 

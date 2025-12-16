@@ -273,6 +273,56 @@ class TestPositionReaderErrorHandling(unittest.TestCase):
         
         # Should return None for invalid address
         self.assertIsNone(contract)
+    
+    @patch('bot.position_reader.Web3')
+    def test_verify_contract_deployed_with_code(self, mock_web3_class):
+        """Test contract verification when contract has code"""
+        # Mock Web3 instance
+        mock_w3 = Mock()
+        mock_w3.to_checksum_address.return_value = '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1'
+        mock_w3.eth.get_code.return_value = b'\x60\x80\x60\x40'  # Some bytecode
+        
+        reader_config = {
+            'rpc_url': 'https://mainnet.infura.io/v3/test',
+            'uniswap_v3_nft_address': '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1',
+        }
+        reader = PositionReader(reader_config)
+        reader.w3 = mock_w3
+        
+        result = reader._verify_contract_deployed('0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1')
+        
+        # Should return True when contract has code
+        self.assertTrue(result)
+    
+    @patch('bot.position_reader.Web3')
+    def test_verify_contract_deployed_without_code(self, mock_web3_class):
+        """Test contract verification when no contract at address"""
+        # Mock Web3 instance
+        mock_w3 = Mock()
+        mock_w3.to_checksum_address.return_value = '0x0000000000000000000000000000000000000000'
+        mock_w3.eth.get_code.return_value = b''  # Empty bytes - no contract
+        
+        reader_config = {
+            'rpc_url': 'https://mainnet.infura.io/v3/test',
+            'uniswap_v3_nft_address': '0x0000000000000000000000000000000000000000',
+        }
+        reader = PositionReader(reader_config)
+        reader.w3 = mock_w3
+        
+        result = reader._verify_contract_deployed('0x0000000000000000000000000000000000000000')
+        
+        # Should return False when no contract code
+        self.assertFalse(result)
+    
+    def test_verify_contract_deployed_no_web3(self):
+        """Test contract verification when Web3 not initialized"""
+        reader_config = {}
+        reader = PositionReader(reader_config)
+        
+        result = reader._verify_contract_deployed('0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1')
+        
+        # Should return False when Web3 is not initialized
+        self.assertFalse(result)
 
 
 class TestPosition(unittest.TestCase):
