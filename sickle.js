@@ -34,7 +34,7 @@ const sickleAbi = [
 ];
 
 // Sickle contract address
-const sickleAddress = '0xba4b2d23ccafeef18a52e1f50eaaa535d9b';
+const sickleAddress = '0xa1b402db32ccaeef1e18a52ee1f50aeaa5535d9b';
 
 // Initialize the contract
 const sickleContract = new web3.eth.Contract(sickleAbi, sickleAddress);
