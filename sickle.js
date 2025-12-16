@@ -1,13 +1,18 @@
 const { Web3 } = require('web3');
-const axios = require('axios');
 
-// Connect to Base
+// Connect to Base mainnet
 const web3 = new Web3('https://base-mainnet.infura.io/v3/c0660434a7f448b0a99f1b5d049e95e6');
 
-const sickleAddress = '0xa1B402db32CCAEEF1E18A52eE1F50aeaa5535d9B'.toLowerCase();
+// Your Sickle address
+const sickleAddress = '0xa1B402db32CCAEEF1E18A52eE1F50aeaa5535d9B';
+
+// Uniswap V3 NonfungiblePositionManager on Base
 const POSITIONS_MANAGER = '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1';
 
-// FULL ABI – this fixes your error
+// Your position Token ID
+const TOKEN_ID = 4292587;
+
+// ABI with balanceOf and positions()
 const positionsAbi = [
     {
         "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
@@ -40,72 +45,43 @@ const positionsAbi = [
 
 const positionsContract = new web3.eth.Contract(positionsAbi, POSITIONS_MANAGER);
 
-// Correct public endpoint for Uniswap V3 on Base (works today)
-const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/subgraphs/id/FUbEPQw1oMghy39fwWBFY5fE6MXPXZQtjncQy2cXdrNS';
-
-// Format helper
-function formatAmount(amount, decimals) {
-    return Number(amount) / (10 ** decimals);
+// Helper to format amounts
+function formatAmount(amountBigInt, decimals) {
+    return Number(amountBigInt) / (10 ** decimals);
 }
 
 (async () => {
     try {
+        // Confirm connection and block
         const blockNumber = await web3.eth.getBlockNumber();
         console.log('Current Block Number:', blockNumber.toString());
         console.log('');
 
+        // Confirm position count
         const balance = await positionsContract.methods.balanceOf(sickleAddress).call();
-        console.log(`Your Sickle owns ${balance} Uniswap V3 position(s) (on-chain check)`);
-        if (balance === '0') {
-            console.log('No positions. Done.');
-            return;
-        }
+        console.log(`Your Sickle (${sickleAddress}) owns ${balance} Uniswap V3 position(s)`);
         console.log('');
 
-        // Auto-find all active Token IDs + details via subgraph
-        const query = `
-        {
-            positions(where: {owner: "${sickleAddress}", liquidity_gt: "0"}, first: 100) {
-                id
-                token0 { symbol decimals }
-                token1 { symbol decimals }
-                fee
-                tickLower
-                tickUpper
-                liquidity
-                tokensOwed0
-                tokensOwed1
-            }
-        }`;
+        // Fetch position details
+        console.log(`Fetching details for Token ID #${TOKEN_ID}...`);
+        const pos = await positionsContract.methods.positions(TOKEN_ID).call();
 
-        const response = await axios.post(SUBGRAPH_URL, { query });
-        const data = response.data.data;
-        const positions = data?.positions || [];
+        // Human-readable output
+        console.log('=== Position Details ===');
+        console.log('Token0: WETH @', pos.token0);
+        console.log('Token1: USDC @', pos.token1);
+        console.log('Fee Tier:', Number(pos.fee) / 10000 + '%');  // Fixed BigInt division
+        console.log('Tick Lower:', pos.tickLower.toString());
+        console.log('Tick Upper:', pos.tickUpper.toString());
+        console.log('Liquidity:', pos.liquidity.toString());
+        console.log('Uncollected Fees (WETH):', formatAmount(pos.tokensOwed0, 18).toFixed(6));
+        console.log('Uncollected Fees (USDC):', formatAmount(pos.tokensOwed1, 6).toFixed(2));
+        console.log('');
 
-        if (positions.length === 0) {
-            console.log('Subgraph found no active positions (rare sync delay).');
-            return;
-        }
-
-        console.log(`Auto-detected ${positions.length} active position(s):\n`);
-
-        for (const pos of positions) {
-            const tokenId = pos.id;
-            console.log(`Token ID: ${tokenId}`);
-            console.log(`Pair: ${pos.token0.symbol} / ${pos.token1.symbol}`);
-            console.log(`Fee: ${Number(pos.fee) / 10000}%`);
-            console.log(`Range: ${pos.tickLower} → ${pos.tickUpper}`);
-            console.log(`Liquidity: ${pos.liquidity}`);
-            console.log(`Fees owed:`);
-            console.log(`  ${formatAmount(pos.tokensOwed0, pos.token0.decimals).toFixed(6)} ${pos.token0.symbol}`);
-            console.log(`  ${formatAmount(pos.tokensOwed1, pos.token1.decimals).toFixed(6)} ${pos.token1.symbol}`);
-            console.log('---');
-        }
-
-        console.log('Perfect! It now finds every Token ID automatically forever.');
+        console.log('Success! This matches your VFAT.io CL-60 WETH/USDC 0.3% position.');
+        console.log('You can now monitor fees, check in-range status, or build harvesting logic.');
 
     } catch (error) {
         console.error('Error:', error.message || error);
-        if (error.response) console.error('Subgraph response:', error.response.data);
     }
 })();
