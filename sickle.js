@@ -7,49 +7,63 @@ const web3 = new Web3('https://base-mainnet.infura.io/v3/c0660434a7f448b0a99f1b5
         const blockNumber = await web3.eth.getBlockNumber();
         console.log('Current Block Number:', blockNumber);
     } catch (error) {
-        console.error('Error connecting:', error);
+        console.error('Connection error:', error);
     }
 })();
 
-// Your personal Sickle address on Base
+// Your Sickle address
 const sickleAddress = '0xa1B402db32CCAEEF1E18A52eE1F50aeaa5535d9B';
 
-// Uniswap V3 Positions NFT manager on Base
-const UNISWAP_V3_NFT_ADDRESS_BASE = '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1';
+// Correct Base Uniswap V3 Positions Manager
+const POSITIONS_MANAGER = '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1';
 
-// Minimal ABI for NonfungiblePositionManager (only what we need: balanceOf and tokenOfOwnerByIndex)
+// Extended ABI to include the positions() function for details later
 const positionsAbi = [
     {"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-    {"inputs":[{"internalType":"uint256","name":"index","type":"uint256"}],"name":"tokenOfOwnerByIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+    {"inputs":[{"internalType":"uint256","name":"index","type":"uint256"}],"name":"tokenOfOwnerByIndex","outputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"stateMutability":"view","type":"function"},
+    // Add this for position details once you have tokenIds
+    {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"positions","outputs":[ /* full struct here if needed */ ],"stateMutability":"view","type":"function"}
 ];
 
-const positionsContract = new web3.eth.Contract(positionsAbi, UNISWAP_V3_NFT_ADDRESS_BASE);
+const positionsContract = new web3.eth.Contract(positionsAbi, POSITIONS_MANAGER);
 
-// Function to fetch all Uniswap V3 position token IDs owned by your Sickle
 async function fetchPositionTokenIds(sickleAddr) {
     try {
         const balance = await positionsContract.methods.balanceOf(sickleAddr).call();
         console.log(`Your Sickle owns ${balance} Uniswap V3 position(s)`);
 
+        if (balance === '0') {
+            console.log('No positions found.');
+            return [];
+        }
+
+        // This loop will likely fail due to revert — catch it
         const tokenIds = [];
-        for (let i = 0; i < balance; i++) {
-            const tokenId = await positionsContract.methods.tokenOfOwnerByIndex(sickleAddr, i).call();
-            tokenIds.push(tokenId);
-            console.log(`Position Token ID #${i}: ${tokenId}`);
+        for (let i = 0; i < parseInt(balance); i++) {
+            try {
+                const tokenId = await positionsContract.methods.tokenOfOwnerByIndex(sickleAddr, i).call();
+                tokenIds.push(tokenId);
+                console.log(`Position Token ID #${i}: ${tokenId}`);
+            } catch (err) {
+                console.error(`Failed to fetch index ${i}:`, err.message);
+            }
         }
         return tokenIds;
     } catch (error) {
-        console.error('Error fetching positions:', error);
-        throw error;
+        console.error('balanceOf reverted (common with contract owners like Sickle):', error.message);
+        console.log('\nManual lookup required:');
+        console.log(`Visit https://basescan.org/address/${sickleAddr}#tokentxns-nft`);
+        console.log('Filter for UNI-V3-POS transfers to see your position token IDs.');
+        console.log('Alternatively, check your positions on https://app.uniswap.org or vfat.io dashboard.');
+        return [];
     }
 }
 
-// Test it
+// Run it
 (async () => {
     try {
-        const tokenIds = await fetchPositionTokenIds(sickleAddress);
-        console.log('All position token IDs:', tokenIds);
+        await fetchPositionTokenIds(sickleAddress);
     } catch (error) {
-        console.error('Failed:', error);
+        console.error('Unexpected error:', error);
     }
 })();
