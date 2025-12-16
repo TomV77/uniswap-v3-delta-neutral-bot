@@ -87,6 +87,16 @@ class PositionReader:
                     block_number = w3.eth.block_number
                     logger.info(f"✓ Web3 connected successfully to {self.rpc_url}")
                     logger.info(f"✓ Current block number: {block_number}")
+                    
+                    # Verify chain ID (Base mainnet = 8453)
+                    try:
+                        chain_id = w3.eth.chain_id
+                        logger.info(f"✓ Connected to chain ID: {chain_id}")
+                        if chain_id != 8453:
+                            logger.warning(f"⚠ Expected Base mainnet (chain ID 8453), got {chain_id}")
+                    except Exception as e:
+                        logger.warning(f"Could not verify chain ID: {e}")
+                    
                     return w3
                 else:
                     logger.warning(f"Web3 connection check failed (attempt {attempt + 1}/{self.max_retries})")
@@ -102,13 +112,46 @@ class PositionReader:
         logger.error(f"Failed to initialize Web3 after {self.max_retries} attempts")
         return None
     
-    async def _call_contract_function_with_retry(self, contract_function, *args, **kwargs):
+    def _verify_contract_deployed(self, address: str) -> bool:
+        """
+        Verify that a contract is deployed at the given address.
+        
+        Args:
+            address: Contract address to verify
+            
+        Returns:
+            True if contract code exists at address, False otherwise
+        """
+        if not self.w3:
+            return False
+        
+        try:
+            checksummed = self.w3.to_checksum_address(address)
+            code = self.w3.eth.get_code(checksummed)
+            
+            # Contract code should be non-empty (more than just '0x')
+            has_code = len(code) > 2
+            
+            if has_code:
+                logger.debug(f"✓ Contract verified at {checksummed} (code length: {len(code)} bytes)")
+            else:
+                logger.error(f"❌ No contract code found at {checksummed}")
+                logger.error("This address does not contain a deployed contract")
+                
+            return has_code
+            
+        except Exception as e:
+            logger.error(f"Error verifying contract at {address}: {e}")
+            return False
+    
+    async def _call_contract_function_with_retry(self, contract_function, *args, function_name: str = "unknown", **kwargs):
         """
         Call a contract function with retry logic.
         
         Args:
             contract_function: The contract function to call
             *args: Positional arguments for the function
+            function_name: Name of the function being called (for better error messages)
             **kwargs: Keyword arguments for the function
             
         Returns:
@@ -122,7 +165,20 @@ class PositionReader:
                 result = contract_function(*args, **kwargs).call()
                 return result
             except (ContractLogicError, BadFunctionCallOutput) as e:
-                logger.error(f"Contract call error (attempt {attempt + 1}/{self.max_retries}): {e}")
+                error_type = type(e).__name__
+                logger.error(f"Could not decode contract function call to {function_name}()")
+                logger.error(f"Error type: {error_type} (attempt {attempt + 1}/{self.max_retries})")
+                logger.error(f"Error details: {e}")
+                
+                if isinstance(e, BadFunctionCallOutput):
+                    logger.error("Could not transact with/call contract function, is contract deployed correctly and chain synced?")
+                    logger.error("Possible causes:")
+                    logger.error("  1. Contract not deployed at the specified address")
+                    logger.error("  2. ABI mismatch between provided ABI and actual contract")
+                    logger.error("  3. RPC endpoint not fully synced with blockchain")
+                    logger.error("  4. Network connectivity issues")
+                    logger.error(f"  5. Function arguments may be incorrect: {args}")
+                
                 if attempt < self.max_retries - 1:
                     delay = self.retry_delay * (2 ** attempt)
                     logger.info(f"Retrying contract call in {delay} seconds...")
@@ -130,7 +186,7 @@ class PositionReader:
                 else:
                     raise
             except Exception as e:
-                logger.error(f"Unexpected error calling contract function (attempt {attempt + 1}/{self.max_retries}): {e}")
+                logger.error(f"Unexpected error calling contract function {function_name} (attempt {attempt + 1}/{self.max_retries}): {type(e).__name__}: {e}")
                 if attempt < self.max_retries - 1:
                     delay = self.retry_delay * (2 ** attempt)
                     logger.info(f"Retrying in {delay} seconds...")
@@ -138,7 +194,7 @@ class PositionReader:
                 else:
                     raise
         
-        raise Exception(f"Contract function call failed after {self.max_retries} attempts")
+        raise Exception(f"Contract function {function_name} call failed after {self.max_retries} attempts")
     
     async def fetch_positions(self, wallet_address: str) -> List[Position]:
         """
@@ -192,6 +248,12 @@ class PositionReader:
             return positions
         
         try:
+            # Verify contract is deployed
+            if not self._verify_contract_deployed(self.uniswap_v3_nft_address):
+                logger.error(f"Uniswap V3 NFT contract not found at {self.uniswap_v3_nft_address}")
+                logger.error("Please verify the contract address is correct for Base Chain")
+                return positions
+            
             # Get positions from Uniswap V3 NFT contract
             nft_contract = self._get_uniswap_nft_contract()
             
@@ -201,30 +263,33 @@ class PositionReader:
                 # Get token IDs owned by wallet with retry logic
                 try:
                     balance = await self._call_contract_function_with_retry(
-                        nft_contract.functions.balanceOf, wallet_address
+                        nft_contract.functions.balanceOf, wallet_address,
+                        function_name="balanceOf"
                     )
                     logger.info(f"Found {balance} Uniswap V3 NFT positions")
                 except Exception as e:
-                    logger.error(f"Could not decode contract function call to balanceOf with return data")
-                    logger.error(f"Error calling balanceOf for address {wallet_address}: {e}")
+                    logger.error(f"Failed to call balanceOf for address {wallet_address}")
                     logger.error(f"Contract address: {self.uniswap_v3_nft_address}")
                     logger.error(f"RPC URL: {self.rpc_url}")
-                    logger.info("Please verify:")
-                    logger.info("  1. RPC endpoint is accessible and properly configured")
-                    logger.info("  2. Contract address is correct for Base Chain")
-                    logger.info("  3. Wallet address is valid")
+                    logger.info("Troubleshooting steps:")
+                    logger.info("  1. Verify RPC endpoint is accessible and synced")
+                    logger.info("  2. Verify contract address is correct for Base Chain")
+                    logger.info("  3. Verify wallet address format is valid")
+                    logger.info("  4. Check that Web3 provider is properly initialized")
                     return positions
                 
                 for i in range(balance):
                     token_id = None  # Initialize to avoid NameError in exception handling
                     try:
                         token_id = await self._call_contract_function_with_retry(
-                            nft_contract.functions.tokenOfOwnerByIndex, wallet_address, i
+                            nft_contract.functions.tokenOfOwnerByIndex, wallet_address, i,
+                            function_name="tokenOfOwnerByIndex"
                         )
                         logger.debug(f"Processing NFT token ID: {token_id}")
                         
                         position_data = await self._call_contract_function_with_retry(
-                            nft_contract.functions.positions, token_id
+                            nft_contract.functions.positions, token_id,
+                            function_name="positions"
                         )
                         
                         # Parse position data
@@ -256,6 +321,12 @@ class PositionReader:
             return positions
         
         try:
+            # Verify contract is deployed
+            if not self._verify_contract_deployed(self.aerodrome_nft_address):
+                logger.error(f"Aerodrome NFT contract not found at {self.aerodrome_nft_address}")
+                logger.error("Please verify the contract address is correct for Base Chain")
+                return positions
+            
             # Get positions from Aerodrome NFT contract
             nft_contract = self._get_aerodrome_nft_contract()
             
@@ -265,12 +336,12 @@ class PositionReader:
                 # Similar to Uniswap, get positions owned by wallet with retry logic
                 try:
                     balance = await self._call_contract_function_with_retry(
-                        nft_contract.functions.balanceOf, wallet_address
+                        nft_contract.functions.balanceOf, wallet_address,
+                        function_name="balanceOf"
                     )
                     logger.info(f"Found {balance} Aerodrome NFT positions")
                 except Exception as e:
-                    logger.error(f"Could not decode contract function call to balanceOf with return data")
-                    logger.error(f"Error calling balanceOf for address {wallet_address}: {e}")
+                    logger.error(f"Failed to call balanceOf for address {wallet_address}")
                     logger.error(f"Contract address: {self.aerodrome_nft_address}")
                     return positions
                 
@@ -278,12 +349,14 @@ class PositionReader:
                     token_id = None  # Initialize to avoid NameError in exception handling
                     try:
                         token_id = await self._call_contract_function_with_retry(
-                            nft_contract.functions.tokenOfOwnerByIndex, wallet_address, i
+                            nft_contract.functions.tokenOfOwnerByIndex, wallet_address, i,
+                            function_name="tokenOfOwnerByIndex"
                         )
                         logger.debug(f"Processing Aerodrome NFT token ID: {token_id}")
                         
                         position_data = await self._call_contract_function_with_retry(
-                            nft_contract.functions.positions, token_id
+                            nft_contract.functions.positions, token_id,
+                            function_name="positions"
                         )
                         
                         # Parse position data
