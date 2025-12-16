@@ -10,7 +10,7 @@ const sickleAddress = '0xa1B402db32CCAEEF1E18A52eE1F50aeaa5535d9B';
 const POSITIONS_MANAGER = '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1';
 
 // Your position Token ID
-const TOKEN_ID = 4292587;
+const TOKEN_ID = 4294280;
 
 // ABI with balanceOf and positions()
 const positionsAbi = [
