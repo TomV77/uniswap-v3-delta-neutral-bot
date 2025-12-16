@@ -1,0 +1,22 @@
+{
+  "name": "uniswap-v3-delta-neutral-bot",
+  "version": "1.0.0",
+  "description": "Node.js utilities for Uniswap V3 position monitoring via sickle contracts",
+  "main": "sickle.js",
+  "scripts": {
+    "test": "node sickle.js",
+    "sickle": "node sickle.js"
+  },
+  "keywords": [
+    "uniswap",
+    "v3",
+    "sickle",
+    "web3",
+    "base"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "web3": "^4.0.0"
+  }
+}

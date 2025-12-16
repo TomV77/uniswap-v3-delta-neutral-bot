@@ -38,9 +38,12 @@ This bot monitors liquidity positions across Uniswap V3 and Aerodrome on **Base 
 │   ├── risk_management.py      # Risk calculations and metrics
 │   └── main.py                 # Main bot orchestration and entry point
 ├── /tests                      # Unit tests
+├── sickle.js                   # Node.js utility for Uniswap V3 position queries
+├── package.json                # Node.js dependencies for sickle.js
 ├── requirements.txt            # Python dependencies
 ├── config.json                 # Configuration file
 ├── README.md                   # This file
+├── SICKLE_JS_README.md         # Documentation for sickle.js utility
 └── LICENSE                     # MIT License
 ```
 
@@ -251,6 +254,16 @@ Total Hedges Executed: 15
 
 ## Integration Details
 
+### Sickle.js Utility
+
+A standalone Node.js script for direct Uniswap V3 position monitoring:
+
+- **Purpose**: Query Uniswap V3 positions directly from the NonfungiblePositionManager contract
+- **Usage**: `node sickle.js` or `npm run sickle`
+- **Features**: Fetches position details, liquidity, tick ranges, and uncollected fees
+- **Documentation**: See [SICKLE_JS_README.md](SICKLE_JS_README.md) for detailed usage
+- **Note**: Currently uses hardcoded TOKEN_ID (4294280) - will be made configurable in future update
+
 ### vfat.io Sickle Contracts
 
 The bot integrates with vfat.io's sickle contracts to fetch position data:
@@ -266,6 +279,7 @@ Direct integration with Uniswap V3 NFT Position Manager on Base Chain:
 - Contract: `0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1` (Base Chain)
 - Fetches positions via `positions()` function
 - Calculates amounts from liquidity and tick ranges
+- See `sickle.js` for a working example of position queries
 
 ### Aerodrome
 
