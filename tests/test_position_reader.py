@@ -300,7 +300,7 @@ class TestPositionReaderErrorHandling(unittest.TestCase):
         # Mock Web3 instance
         mock_w3 = Mock()
         mock_w3.to_checksum_address.return_value = '0x0000000000000000000000000000000000000000'
-        mock_w3.eth.get_code.return_value = b'0x'  # No code (empty)
+        mock_w3.eth.get_code.return_value = b''  # Empty bytes - no contract
         
         reader_config = {
             'rpc_url': 'https://mainnet.infura.io/v3/test',

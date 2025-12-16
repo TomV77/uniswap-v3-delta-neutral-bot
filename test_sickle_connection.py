@@ -9,6 +9,7 @@ This mirrors the functionality of sickle.js for troubleshooting.
 """
 
 import sys
+import os
 from web3 import Web3
 from web3.exceptions import ContractLogicError, BadFunctionCallOutput
 import logging
@@ -24,15 +25,18 @@ logger = logging.getLogger(__name__)
 def test_sickle_connection():
     """Test connection to Uniswap V3 contract on Base Chain"""
     
-    # Configuration (matching sickle.js)
-    RPC_URL = 'https://base-mainnet.infura.io/v3/c0660434a7f448b0a99f1b5d049e95e6'
-    SICKLE_ADDRESS = '0xa1B402db32CCAEEF1E18A52eE1F50aeaa5535d9B'
-    POSITIONS_MANAGER = '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1'
-    TOKEN_ID = 4294280
+    # Configuration - Get from environment variables or use defaults
+    RPC_URL = os.getenv('RPC_URL', 'https://base-mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID')
+    SICKLE_ADDRESS = os.getenv('VFAT_SICKLE_ADDRESS', '0xa1B402db32CCAEEF1E18A52eE1F50aeaa5535d9B')
+    POSITIONS_MANAGER = os.getenv('UNISWAP_V3_NFT_ADDRESS', '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1')
+    TOKEN_ID = int(os.getenv('TEST_TOKEN_ID', '4294280'))
     
     logger.info("=" * 80)
     logger.info("Testing Sickle Connection to Uniswap V3 on Base Chain")
     logger.info("=" * 80)
+    
+    if 'YOUR_INFURA_PROJECT_ID' in RPC_URL:
+        logger.warning("⚠ Using default RPC URL - set RPC_URL environment variable for actual testing")
     
     try:
         # Step 1: Initialize Web3

@@ -1,16 +1,19 @@
 const { Web3 } = require('web3');
+require('dotenv').config();
+
+// Configuration from environment or defaults
+const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID';
+const sickleAddress = process.env.VFAT_SICKLE_ADDRESS || '0xa1B402db32CCAEEF1E18A52eE1F50aeaa5535d9B';
+const POSITIONS_MANAGER = process.env.UNISWAP_V3_NFT_ADDRESS || '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1';
+const TOKEN_ID = parseInt(process.env.TEST_TOKEN_ID || '4294280');
+
+// Warn if using default RPC URL
+if (RPC_URL.includes('YOUR_INFURA_PROJECT_ID')) {
+    console.warn('⚠ Using default RPC URL - set RPC_URL in .env file for actual testing');
+}
 
 // Connect to Base mainnet
-const web3 = new Web3('https://base-mainnet.infura.io/v3/c0660434a7f448b0a99f1b5d049e95e6');
-
-// Your Sickle address
-const sickleAddress = '0xa1B402db32CCAEEF1E18A52eE1F50aeaa5535d9B';
-
-// Uniswap V3 NonfungiblePositionManager on Base
-const POSITIONS_MANAGER = '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1';
-
-// Your position Token ID
-const TOKEN_ID = 4294280;
+const web3 = new Web3(RPC_URL);
 
 // ABI with balanceOf and positions()
 const positionsAbi = [

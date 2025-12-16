@@ -129,8 +129,9 @@ class PositionReader:
             checksummed = self.w3.to_checksum_address(address)
             code = self.w3.eth.get_code(checksummed)
             
-            # Contract code should be non-empty (more than just '0x')
-            has_code = len(code) > 2
+            # Contract code should be non-empty
+            # get_code() returns bytes object - empty bytes (b'') means no contract
+            has_code = len(code) > 0
             
             if has_code:
                 logger.debug(f"✓ Contract verified at {checksummed} (code length: {len(code)} bytes)")
